@@ -11,6 +11,7 @@ import java.util.Random;
 
 /**
  * Represents a physical card that a holder of an bank account can use to make pin transactions.
+ *
  * @author Kevin Witlox
  */
 @Entity
@@ -34,18 +35,24 @@ public class Card {
     private String pin; // TODO: add hashing
     private Date expirationDate;
 
+    private int attempts;
+
+    private boolean blocked;
     private boolean invalidated;
 
     /**
      * @deprecated empty constructor for spring
      */
-    public Card() { }
+    public Card() {
+    }
 
     public Card(String token, Customer holder, BankAccount account, String cardNumber, Date currDate) {
         this.holder = holder;
         this.account = account;
         this.cardNumber = cardNumber;
         this.invalidated = false;
+        this.blocked = false;
+        this.attempts = 0;
 
         pin = generatePin(token);
 
@@ -79,12 +86,41 @@ public class Card {
         return pin;
     }
 
+    public int getAttempts() {
+        return attempts;
+    }
+
+    public void resetAttempts() {
+        attempts = 0;
+    }
+
+    public void addAttempt() {
+        attempts++;
+
+        if (attempts == 3) {
+            block();
+            attempts = 0;
+        }
+    }
+
     public boolean isInvalidated() {
         return invalidated;
     }
 
+    public boolean isBlocked() {
+        return blocked;
+    }
+
     public void invalidate() {
         this.invalidated = true;
+    }
+
+    public void block() {
+        this.blocked = true;
+    }
+
+    public void unblock() {
+        this.blocked = false;
     }
 
     public Date getExpirationDate() {

@@ -42,10 +42,6 @@ public class InfoServiceImpl implements InfoService {
     @Override
     public BalanceBean getBalance(String autToken, String iBAN) throws InvalidParamValueError,
             NotAuthorizedError {
-        if (!IBANUtil.isValidIBAN(iBAN)) {
-            throw new InvalidParamValueError("The given IBAN is invalid.");
-        }
-
         Customer customer = auth.getAuthorizedCustomer(autToken);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
                 (iBAN));
@@ -64,10 +60,6 @@ public class InfoServiceImpl implements InfoService {
     @Override
     public List<Transaction> getTransactionsOverview(String authToken, String iBAN, Integer
             nrOfTransactions) throws InvalidParamValueError, NotAuthorizedError {
-        if (!IBANUtil.isValidIBAN(iBAN)) {
-            throw new InvalidParamValueError("The given IBAN is invalid.");
-        }
-
         Customer customer = auth.getAuthorizedCustomer(authToken);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
                 (iBAN));

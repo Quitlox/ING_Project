@@ -88,10 +88,6 @@ public class TransactionServiceImpl implements TransactionService {
             throw new InvalidParamValueError("The given source IBAN is not valid.");
         }
 
-        if (!IBANUtil.isValidIBAN(targetIBAN)) {
-            throw new InvalidParamValueError("The given target IBAN is not valid.");
-        }
-
         BankAccount fromBankAccount = auth.getAuthorizedAccount(sourceIBAN, pinCard, pinCode);
         BankAccount toBankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
                 (targetIBAN));
@@ -129,10 +125,6 @@ public class TransactionServiceImpl implements TransactionService {
             NotAuthorizedError {
         if (!IBANUtil.isValidIBAN(sourceIBAN)) {
             throw new InvalidParamValueError("The given source IBAN is not valid.");
-        }
-
-        if (!IBANUtil.isValidIBAN(targetIBAN)) {
-            throw new InvalidParamValueError("The given target IBAN is not valid.");
         }
 
         BankAccount fromBankAccount = bankAccountRepository.findOne((int) IBANUtil

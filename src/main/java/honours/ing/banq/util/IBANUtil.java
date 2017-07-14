@@ -1,5 +1,6 @@
 package honours.ing.banq.util;
 
+import honours.ing.banq.InvalidParamValueError;
 import honours.ing.banq.account.BankAccount;
 
 public class IBANUtil {
@@ -19,7 +20,11 @@ public class IBANUtil {
         return calculateChecksum(iBAN.substring(4, iBAN.length())).equals(check);
     }
 
-    public static long getAccountNumber(String iBAN) {
+    public static long getAccountNumber(String iBAN) throws InvalidParamValueError {
+        if (!IBANUtil.isValidIBAN(iBAN)) {
+            throw new InvalidParamValueError("The given IBAN is invalid");
+        }
+
         return Long.parseLong(iBAN.substring(8, iBAN.length()));
     }
 

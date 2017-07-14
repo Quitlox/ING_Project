@@ -122,7 +122,7 @@ public class AuthServiceTest extends BoilerplateTest {
         authService.getAuthorizedAccount(account1.iBan, account1.cardNumber, "");
     }
 
-    @Test(expected = NotAuthorizedError.class)
+    @Test(expected = InvalidPINError.class)
     public void getAuthorizedAccountExpiredCard() throws Exception {
         timeService.simulateTime(10000);
         authService.getAuthorizedAccount(account1.iBan, account1.cardNumber, account1.pin);

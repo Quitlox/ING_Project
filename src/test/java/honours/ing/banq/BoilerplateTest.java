@@ -78,6 +78,8 @@ public class BoilerplateTest {
 
     @After
     public void tearDown() throws Exception {
+        account1.token = authService.getAuthToken("jantje96", "1234").getAuthToken();
+        account2.token = authService.getAuthToken("piet1", "1234").getAuthToken();
         bankAccountService.closeAccount(account1.token, account1.iBan);
         bankAccountService.closeAccount(account2.token, account2.iBan);
     }

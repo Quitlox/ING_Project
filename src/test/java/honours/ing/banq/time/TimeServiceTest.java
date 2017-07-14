@@ -2,6 +2,7 @@ package honours.ing.banq.time;
 
 import honours.ing.banq.BoilerplateTest;
 import honours.ing.banq.InvalidParamValueError;
+import honours.ing.banq.auth.InvalidPINError;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -99,7 +100,7 @@ public class TimeServiceTest extends BoilerplateTest {
         timeService.reset();
         time = timeRepository.findAll().get(0);
         assertThat(time.getShift(), equalTo(0));
-        Thread.sleep(1000); // Otherwise the current date will be equal to the date of the first three transactions,
+        Thread.sleep(1500); // Otherwise the current date will be equal to the date of the first three transactions,
                             // causing them to be deleted
         timeService.simulateTime(1);
 
@@ -112,7 +113,7 @@ public class TimeServiceTest extends BoilerplateTest {
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo(150d));
     }
 
-    @Test(expected = InvalidParamValueError.class)
+    @Test(expected = InvalidPINError.class)
     public void resetCardExpired() throws Exception {
         Time time;
 

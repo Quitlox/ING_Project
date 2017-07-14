@@ -108,12 +108,26 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidParamValueError("Card does not exist");
         }
 
-        if (!card.getPin().equals(pinCode)) {
-            throw new InvalidPINError();
+        // Check expiration
+        if (timeService.getDateObject().getTime() >= card.getExpirationDate().getTime()) {
+            throw new InvalidPINError("The given card is expired.");
         }
 
-        if (timeService.getDateObject().getTime() >= card.getExpirationDate().getTime()) {
-            throw new InvalidPINError();
+        // Check block
+        if (card.isBlocked()) {
+            throw new InvalidPINError("The given card is blocked because of too many consecutive failed authorization attempts.");
+        }
+
+        // Check pin, track attempts
+        if (!card.getPin().equals(pinCode)) {
+            card.addAttempt();
+            cardRepository.save(card);
+            throw new InvalidPINError("The entered PIN is wrong.");
+        }
+
+        if (card.getAttempts() != 0) {
+            card.resetAttempts();
+            cardRepository.save(card);
         }
 
         return account;

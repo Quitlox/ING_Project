@@ -20,6 +20,8 @@ public class BankAccount {
 
     private Double balance;
 
+    private Double overdraftLimit;
+
     @ManyToOne(targetEntity = Customer.class)
     private Customer primaryHolder;
 
@@ -34,7 +36,8 @@ public class BankAccount {
 
     public BankAccount(Customer primaryHolder) {
         this.primaryHolder = primaryHolder;
-        balance = 0.0;
+        balance = 0d;
+        overdraftLimit = 0d;
         holders = new ArrayList<>();
     }
 
@@ -52,6 +55,14 @@ public class BankAccount {
 
     public void addBalance(Double balance) {
         this.balance += balance;
+    }
+
+    public Double getOverdraftLimit() {
+        return overdraftLimit;
+    }
+
+    public void setOverdraftLimit(Double overdraftLimit) {
+        this.overdraftLimit = overdraftLimit;
     }
 
     public Customer getPrimaryHolder() {

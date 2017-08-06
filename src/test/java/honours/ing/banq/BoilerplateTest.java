@@ -17,6 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.AfterTransaction;
+import org.springframework.test.context.transaction.BeforeTransaction;
 
 import javax.transaction.Transactional;
 
@@ -29,8 +31,8 @@ import static org.junit.Assert.assertThat;
 @Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
-@Import(TestConfiguration.class)
 @Transactional
+@Import(TestConfiguration.class)
 @ActiveProfiles("test")
 public class BoilerplateTest {
 
@@ -54,15 +56,21 @@ public class BoilerplateTest {
     protected TimeService timeService;
 
     // Fields
-    protected AccountInfo account1, account2;
+    protected TestAccountInfo account1, account2;
 
-    @Before
+    @BeforeTransaction
     public void setUp() throws Exception {
-        account1 = new AccountInfo(bankAccountService.openAccount("Jan", "Jansen", "J.", "1996-1-1",
-                "1234567890", "Klaverstraat 1", "0612345678", "janjansen@gmail.com", "jantje96",
-                "1234"), "jantje96", "1234");
-        account2 = new AccountInfo(bankAccountService.openAccount("Piet", "Pietersen", "p.p", "1998-8-8",
-                "012345789", "Huisstraat 1", "0607080910", "piet@gmail.com", "piet1", "1234"), "piet1", "1234");
+        account1 = new TestAccountInfo(new AccountInfo(bankAccountService.openAccount("Jan", "Jansen", "J.", "1996-1-1",
+                                                                                      "1234567890", "Klaverstraat 1",
+                                                                                      "0612345678",
+                                                                                      "janjansen@gmail.com", "jantje96",
+                                                                                      "1234"), "jantje96", "1234"),
+                                       "janjansen@gmail.com", "1234567890");
+        account2 = new TestAccountInfo(
+                new AccountInfo(bankAccountService.openAccount("Piet", "Pietersen", "p.p", "1998-8-8",
+                                                               "012345789", "Huisstraat 1", "0607080910",
+                                                               "piet@gmail.com", "piet1", "1234"), "piet1", "1234"),
+                "piet@gmail.com", "012345789");
 
         account1.token = authService.getAuthToken("jantje96", "1234").getAuthToken();
         account2.token = authService.getAuthToken("piet1", "1234").getAuthToken();
@@ -76,7 +84,7 @@ public class BoilerplateTest {
         timeService.reset();
     }
 
-    @After
+    @AfterTransaction
     public void tearDown() throws Exception {
         account1.token = authService.getAuthToken("jantje96", "1234").getAuthToken();
         account2.token = authService.getAuthToken("piet1", "1234").getAuthToken();

@@ -51,7 +51,6 @@ public class AuthServiceImpl implements AuthService {
 
     private Random random = new Random();
 
-    @Transactional
     @Override
     public AuthToken getAuthToken(String username, String password) throws AuthenticationError {
         Customer customer = customerRepository.findByUsernameAndPassword(username, password);

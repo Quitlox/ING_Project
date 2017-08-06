@@ -24,4 +24,12 @@ public class AccountInfo {
         this.password = password;
     }
 
+    public AccountInfo(AccountInfo accountInfo) {
+        iBan = accountInfo.iBan;
+        pin = accountInfo.pin;
+        cardNumber = accountInfo.cardNumber;
+        username = accountInfo.username;
+        password = accountInfo.password;
+    }
+
 }

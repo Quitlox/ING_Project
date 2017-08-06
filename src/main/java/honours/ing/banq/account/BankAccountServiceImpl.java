@@ -19,6 +19,7 @@ import honours.ing.banq.time.TimeService;
 import honours.ing.banq.util.IBANUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;

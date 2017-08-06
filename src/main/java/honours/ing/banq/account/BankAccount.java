@@ -14,6 +14,11 @@ import java.util.List;
 @Entity
 public class BankAccount {
 
+    @Transient
+    private static final double INTEREST_ANNUAL = 0.1d;
+    @Transient
+    public static final double INTEREST_MONTHLY = Math.pow((double) 1 + INTEREST_ANNUAL, 1 / 12) - 1;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
@@ -21,6 +26,10 @@ public class BankAccount {
     private Double balance;
 
     private Double overdraftLimit;
+
+    private Double dailyLow;
+
+    private Double builtInterest;
 
     @ManyToOne(targetEntity = Customer.class)
     private Customer primaryHolder;
@@ -38,6 +47,8 @@ public class BankAccount {
         this.primaryHolder = primaryHolder;
         balance = 0d;
         overdraftLimit = 0d;
+        dailyLow = 0d;
+        builtInterest = 0d;
         holders = new ArrayList<>();
     }
 
@@ -51,6 +62,7 @@ public class BankAccount {
 
     public void subBalance(Double balance) {
         this.balance -= balance;
+        this.dailyLow = this.balance;
     }
 
     public void addBalance(Double balance) {
@@ -63,6 +75,26 @@ public class BankAccount {
 
     public void setOverdraftLimit(Double overdraftLimit) {
         this.overdraftLimit = overdraftLimit;
+    }
+
+    public Double getDailyLow() {
+        return dailyLow;
+    }
+
+    public void setDailyLow(Double dailyLow) {
+        this.dailyLow = dailyLow;
+    }
+
+    public void resetBuiltInterest() {
+        this.builtInterest = 0d;
+    }
+
+    public void addBuiltInterest(Double builtInterest) {
+        this.builtInterest += builtInterest;
+    }
+
+    public Double getBuiltInterest() {
+        return builtInterest;
     }
 
     public Customer getPrimaryHolder() {

@@ -66,11 +66,6 @@ public class TransactionServiceImpl implements TransactionService {
             throw new InvalidParamValueError("The given card is expired.");
         }
 
-        // Check balance
-        if (amount <= 0d) {
-            throw new InvalidParamValueError("Amount should be greater than 0.");
-        }
-
         // Update balance
         bankAccount.addBalance(amount);
         bankAccountRepository.save(bankAccount);
@@ -99,7 +94,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         // Check balance
-        if (fromBankAccount.getBalance() - amount < 0) {
+        if (fromBankAccount.getBalance() - amount < -fromBankAccount.getOverdraftLimit()) {
             throw new InvalidParamValueError("Not enough balance on account.");
         }
 
@@ -140,7 +135,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         // Check balance
-        if (fromBankAccount.getBalance() - amount < 0) {
+        if (fromBankAccount.getBalance() - amount < -toBankAccount.getOverdraftLimit()) {
             throw new InvalidParamValueError("Not enough balance on account.");
         }
 

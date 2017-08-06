@@ -89,4 +89,11 @@ public class BankAccountServiceTest extends BoilerplateTest {
         bankAccountService.closeAccount(account1.token, IBANUtil.generateIBAN(123456789));
     }
 
+    @Test
+    public void setOverdraftLimit() throws Exception {
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
+
+        //
+    }
+
 }

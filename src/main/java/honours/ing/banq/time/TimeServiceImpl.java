@@ -34,6 +34,9 @@ public class TimeServiceImpl implements TimeService {
     @Autowired
     private BankAccountRepository bankAccountRepository;
 
+    @Autowired
+    private TimeManager timeManager;
+
     @Override
     public void simulateTime(int nrOfDays) throws InvalidParamValueError {
         // Delete previous
@@ -49,12 +52,17 @@ public class TimeServiceImpl implements TimeService {
         Time time = times.get(0);
         time.setShift(time.getShift() + nrOfDays);
         timeRepository.save(time);
+
+        // Simulate Interest
+        timeManager.calculateInterest(BankAccount.INTEREST_MONTHLY, nrOfDays);
+        timeManager.calculateInterest();
     }
 
     @Override
     public void reset() throws NoEffectError {
         // Delete previous entry
         List<Time> times = timeRepository.findAll();
+        int shift = times.get(0).getShift();
         timeRepository.delete(times);
         // Reset time to current time
         Time time = new Time(0);
@@ -76,6 +84,10 @@ public class TimeServiceImpl implements TimeService {
             bankAccountRepository.save(destination);
         }
         transactionRepository.delete(futureTransactions);
+
+        // Revert Interest
+        timeManager.calculateInterest(1 / BankAccount.INTEREST_MONTHLY, shift);
+        timeManager.calculateInterest();
     }
 
     @Override

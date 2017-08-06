@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
@@ -19,6 +20,10 @@ import java.util.List;
 @Component
 public class TimeManager {
 
+    // Services
+    private TimeService timeService;
+
+    // Repositories
     @Autowired
     private TimeRepository timeRepository;
 
@@ -35,25 +40,49 @@ public class TimeManager {
     }
 
     // 00:01, later than chargeInterest()
-    @Scheduled(cron = "0 1 0 * * ?")
+    @Scheduled(cron = "0 0 0 * * ?")
     public void calculateInterest() {
+        if (toCalendar(timeService.getDateObject()).get(Calendar.DAY_OF_MONTH) == 1) {
+            chargeInterest();
+        }
+
         List<BankAccount> bankAccounts = bankAccountRepository.findAll();
         for (BankAccount bankAccount : bankAccounts) {
             if (bankAccount.getBalance() < 0) {
                 bankAccount.addBuiltInterest(
                         bankAccount.getBalance() * (BankAccount.INTEREST_MONTHLY / GregorianCalendar.getInstance()
-                                                                                                    .getActualMaximum(Calendar.DAY_OF_MONTH)));
+                                                                                                    .getActualMaximum(
+                                                                                                            Calendar.DAY_OF_MONTH)));
             }
         }
     }
 
-    @Scheduled(cron = "0 0 0 1 1/1 ? *")
+    public void calculateInterest(double monthlyInterest, double days) {
+        List<BankAccount> bankAccounts = bankAccountRepository.findAll();
+        for (BankAccount bankAccount : bankAccounts) {
+            if (bankAccount.getBalance() < 0) {
+                for (int i = 0; i < days; i++) {
+                    bankAccount.addBuiltInterest(bankAccount.getBalance() * (monthlyInterest /
+                                                                             toCalendar(timeService.getDateObject())
+                                                                                     .getActualMaximum(
+                                                                                             Calendar.DAY_OF_MONTH)));
+                }
+            }
+        }
+    }
+
     public void chargeInterest() {
         List<BankAccount> bankAccounts = bankAccountRepository.findAll();
         for (BankAccount bankAccount : bankAccounts) {
             bankAccount.addBalance(bankAccount.getBuiltInterest());
             bankAccount.resetBuiltInterest();
         }
+    }
+
+    private static GregorianCalendar toCalendar(Date date) {
+        GregorianCalendar calendar = (GregorianCalendar) GregorianCalendar.getInstance();
+        calendar.setTime(date);
+        return calendar;
     }
 
 }

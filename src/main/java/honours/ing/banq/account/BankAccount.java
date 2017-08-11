@@ -21,7 +21,7 @@ public class BankAccount {
     public static final double INTEREST_MONTHLY = Math.pow(1d + INTEREST_ANNUAL, 1d / 12d) - 1;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     private Double balance;
@@ -31,6 +31,10 @@ public class BankAccount {
     private Double dailyLow;
 
     private Double builtInterest;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private SavingsAccount savingsAccount;
 
     @ManyToOne(targetEntity = Customer.class)
     private Customer primaryHolder;
@@ -51,6 +55,8 @@ public class BankAccount {
         dailyLow = 0d;
         builtInterest = 0d;
         holders = new ArrayList<>();
+
+        savingsAccount = null;
     }
 
     public Integer getId() {
@@ -100,6 +106,14 @@ public class BankAccount {
 
     public Customer getPrimaryHolder() {
         return primaryHolder;
+    }
+
+    public SavingsAccount getSavingsAccount() {
+        return savingsAccount;
+    }
+
+    public void setSavingsAccount(SavingsAccount savingsAccount) {
+        this.savingsAccount = savingsAccount;
     }
 
     public void addHolder(Customer holder) {

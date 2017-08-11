@@ -129,7 +129,8 @@ public class BankAccountServiceImpl implements BankAccountService {
         // Delete Customer
         List<BankAccount> primaryAccounts = bankAccountRepository.findBankAccountsByPrimaryHolder(customer);
         List<BankAccount> heldAccounts = bankAccountRepository.findBankAccountsByHolders(customer.getId());
-        if ((primaryAccounts == null || primaryAccounts.isEmpty()) && (heldAccounts == null || heldAccounts.isEmpty())) {
+        if ((primaryAccounts == null || primaryAccounts.isEmpty()) &&
+            (heldAccounts == null || heldAccounts.isEmpty())) {
             authRepository.deleteAllByCustomer(customer);
             customerRepository.delete(customer);
         }
@@ -171,4 +172,34 @@ public class BankAccountServiceImpl implements BankAccountService {
 
         return new OverdraftLimitBean(bankAccount.getOverdraftLimit());
     }
+
+    @Override
+    public void openSavingsAccount(String token, String iBan) throws InvalidParamValueError, NotAuthorizedError {
+        Customer customer = auth.getAuthorizedCustomer(token);
+        BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(iBan));
+
+        if (!infoService.getUserAccess(token).contains(new UserAccessBean(bankAccount, customer))) {
+            throw new NotAuthorizedError();
+        }
+
+        bankAccount.setSavingsAccount(new SavingsAccount(bankAccount));
+        bankAccountRepository.save(bankAccount);
+    }
+
+    @Override
+    public void closeSavingsAccount(String token, String iBan) throws InvalidParamValueError, NotAuthorizedError {
+        Customer customer = auth.getAuthorizedCustomer(token);
+        BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(iBan));
+
+        if (!infoService.getUserAccess(token).contains(new UserAccessBean(bankAccount, customer))) {
+            throw new NotAuthorizedError();
+        }
+
+        // Assumption: getSavingsAccount >= 0
+        bankAccount.addBalance(bankAccount.getSavingsAccount().getBalance());
+        bankAccount.setSavingsAccount(null);
+
+        bankAccountRepository.save(bankAccount);
+    }
+
 }

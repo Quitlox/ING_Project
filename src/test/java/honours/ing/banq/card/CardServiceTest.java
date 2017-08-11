@@ -4,13 +4,10 @@ import honours.ing.banq.BoilerplateTest;
 import honours.ing.banq.InvalidParamValueError;
 import honours.ing.banq.access.NoEffectError;
 import honours.ing.banq.access.bean.NewCardBean;
-import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.account.BankAccountRepository;
 import honours.ing.banq.auth.InvalidPINError;
 import honours.ing.banq.auth.NotAuthorizedError;
 import honours.ing.banq.util.IBANUtil;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

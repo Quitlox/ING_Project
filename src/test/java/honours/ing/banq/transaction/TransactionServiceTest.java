@@ -5,7 +5,6 @@ import honours.ing.banq.InvalidParamValueError;
 import honours.ing.banq.auth.InvalidPINError;
 import honours.ing.banq.auth.NotAuthorizedError;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -234,6 +233,24 @@ public class TransactionServiceTest extends BoilerplateTest {
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
                 (0d));
+    }
+
+    @Test
+    public void transferMoneyCustomOverdraftLimit() throws Exception {
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, "Piet Pietersen",
+                                         1000d, "Geld");
+    }
+
+    @Test
+    public void transferMoneyCustomOverdraftLimitNotEnoughBalance() throws Exception {
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, "Piet Pietersen",
+                                         1000d, "Geld");
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1500d);
+        exception.expect(InvalidParamValueError.class);
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, "Piet Pietersen",
+                                         1000d, "Geld");
     }
 
 }

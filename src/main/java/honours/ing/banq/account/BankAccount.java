@@ -3,6 +3,7 @@ package honours.ing.banq.account;
 import honours.ing.banq.customer.Customer;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,11 +15,22 @@ import java.util.List;
 @Entity
 public class BankAccount {
 
+    @Transient
+    private static final double INTEREST_ANNUAL = 0.1d;
+    @Transient
+    public static final double INTEREST_MONTHLY = Math.pow(1d + INTEREST_ANNUAL, 1d / 12d) - 1;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
     private Double balance;
+
+    private Double overdraftLimit;
+
+    private Double dailyLow;
+
+    private Double builtInterest;
 
     @ManyToOne(targetEntity = Customer.class)
     private Customer primaryHolder;
@@ -34,7 +46,10 @@ public class BankAccount {
 
     public BankAccount(Customer primaryHolder) {
         this.primaryHolder = primaryHolder;
-        balance = 0.0;
+        balance = 0d;
+        overdraftLimit = 0d;
+        dailyLow = 0d;
+        builtInterest = 0d;
         holders = new ArrayList<>();
     }
 
@@ -48,10 +63,39 @@ public class BankAccount {
 
     public void subBalance(Double balance) {
         this.balance -= balance;
+        this.dailyLow = this.balance;
     }
 
     public void addBalance(Double balance) {
         this.balance += balance;
+    }
+
+    public Double getOverdraftLimit() {
+        return overdraftLimit;
+    }
+
+    public void setOverdraftLimit(Double overdraftLimit) {
+        this.overdraftLimit = overdraftLimit;
+    }
+
+    public Double getDailyLow() {
+        return dailyLow;
+    }
+
+    public void setDailyLow(Double dailyLow) {
+        this.dailyLow = dailyLow;
+    }
+
+    public void resetBuiltInterest() {
+        this.builtInterest = 0d;
+    }
+
+    public void addBuiltInterest(Double builtInterest) {
+        this.builtInterest += builtInterest;
+    }
+
+    public Double getBuiltInterest() {
+        return builtInterest;
     }
 
     public Customer getPrimaryHolder() {

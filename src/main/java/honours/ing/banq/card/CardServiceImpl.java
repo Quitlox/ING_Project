@@ -9,14 +9,11 @@ import honours.ing.banq.account.BankAccountRepository;
 import honours.ing.banq.auth.AuthService;
 import honours.ing.banq.auth.NotAuthorizedError;
 import honours.ing.banq.customer.Customer;
-import honours.ing.banq.time.Time;
 import honours.ing.banq.time.TimeService;
 import honours.ing.banq.util.IBANUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Date;
 
 /**
  * @author Kevin Witlox

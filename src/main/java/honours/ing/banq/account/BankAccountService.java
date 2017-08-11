@@ -4,6 +4,7 @@ import com.googlecode.jsonrpc4j.JsonRpcParam;
 import com.googlecode.jsonrpc4j.JsonRpcService;
 import honours.ing.banq.InvalidParamValueError;
 import honours.ing.banq.account.bean.NewAccountBean;
+import honours.ing.banq.account.bean.OverdraftLimitBean;
 import honours.ing.banq.auth.NotAuthorizedError;
 
 /**
@@ -50,5 +51,11 @@ public interface BankAccountService {
 
     void closeAccount(@JsonRpcParam("authToken") String authToken, @JsonRpcParam("iBAN") String iBAN) throws
             NotAuthorizedError, InvalidParamValueError;
+
+    void setOverdraftLimit(@JsonRpcParam("authToken") String token, @JsonRpcParam("iBAN") String iBan,
+                           @JsonRpcParam("overdraftLimit") Double overdraftLimit) throws InvalidParamValueError, NotAuthorizedError;
+
+    OverdraftLimitBean getOverdraftLimit(@JsonRpcParam("authToken") String token,
+                                         @JsonRpcParam("iBAN") String iBan) throws NotAuthorizedError;
 
 }

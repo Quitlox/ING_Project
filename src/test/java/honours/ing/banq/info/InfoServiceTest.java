@@ -58,6 +58,7 @@ public class InfoServiceTest extends BoilerplateTest {
 
     @Test
     public void getTransactionsOverview() throws Exception {
+        // TODO: Test sometimes fails because of sorting of returned Lists
         List<Transaction> transactions = infoService.getTransactionsOverview(account1.token, account1.iBan, 2);
         assertThat(transactions.size(), equalTo(0));
 

@@ -10,7 +10,6 @@ import honours.ing.banq.auth.NotAuthorizedError;
 import honours.ing.banq.card.Card;
 import honours.ing.banq.card.CardRepository;
 import honours.ing.banq.customer.Customer;
-import honours.ing.banq.time.Time;
 import honours.ing.banq.time.TimeRepository;
 import honours.ing.banq.time.TimeService;
 import honours.ing.banq.util.IBANUtil;
@@ -18,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 /**
  * @author Kevin Witlox
@@ -66,9 +65,8 @@ public class TransactionServiceImpl implements TransactionService {
             throw new InvalidParamValueError("The given card is expired.");
         }
 
-        // Check balance
-        if (amount <= 0d) {
-            throw new InvalidParamValueError("Amount should be greater than 0.");
+        if (amount <= 0) {
+            throw new InvalidParamValueError("The amount must be positive.");
         }
 
         // Update balance
@@ -99,7 +97,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         // Check balance
-        if (fromBankAccount.getBalance() - amount < 0) {
+        if (fromBankAccount.getBalance() - amount < -fromBankAccount.getOverdraftLimit()) {
             throw new InvalidParamValueError("Not enough balance on account.");
         }
 
@@ -140,7 +138,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         // Check balance
-        if (fromBankAccount.getBalance() - amount < 0) {
+        if (fromBankAccount.getBalance() - amount < -fromBankAccount.getOverdraftLimit()) {
             throw new InvalidParamValueError("Not enough balance on account.");
         }
 

@@ -1,8 +1,7 @@
 package honours.ing.banq.transaction;
 
-import honours.ing.banq.account.BankAccount;
-
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**

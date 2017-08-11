@@ -82,8 +82,6 @@ public class BoilerplateTest {
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
                 (0d));
 
-        // Reset time
-        timeService.reset();
     }
 
 }

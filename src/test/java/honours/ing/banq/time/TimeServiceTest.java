@@ -18,9 +18,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 /**
@@ -60,7 +58,7 @@ public class TimeServiceTest extends BoilerplateTest {
         // Init
         assertThat(timeRepository.findAll().size(), equalTo(1));
         time = timeRepository.findAll().get(0);
-        assertThat(time.getShift(), equalTo(0));
+        assertThat(utcEqualCalendar(time.getUtc(), Calendar.getInstance()), is(true));
 
         // Setup Account to receive interest
         bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
@@ -71,7 +69,9 @@ public class TimeServiceTest extends BoilerplateTest {
         timeService.simulateTime(SHIFT);
         assertThat(timeRepository.findAll().size(), equalTo(1));
         time = timeRepository.findAll().get(0);
-        assertThat(time.getShift(), equalTo(SHIFT));
+        Calendar shift1 = Calendar.getInstance();
+        shift1.add(Calendar.DAY_OF_MONTH, SHIFT);
+        assertThat(utcEqualCalendar(time.getUtc(), shift1), is(true));
 
         // Reset authentication
         account1.token = authService.getAuthToken(account1.username, account1.password).getAuthToken();
@@ -96,7 +96,9 @@ public class TimeServiceTest extends BoilerplateTest {
         timeService.simulateTime(SHIFT);
         assertThat(timeRepository.findAll().size(), equalTo(1));
         time = timeRepository.findAll().get(0);
-        assertThat(time.getShift(), equalTo(SHIFT + SHIFT));
+        Calendar shift2 = Calendar.getInstance();
+        shift2.add(Calendar.DAY_OF_MONTH, SHIFT * 2);
+        assertThat(utcEqualCalendar(time.getUtc(), shift2), is(true));
 
         // Reset authentication
         account1.token = authService.getAuthToken(account1.username, account1.password).getAuthToken();
@@ -139,7 +141,7 @@ public class TimeServiceTest extends BoilerplateTest {
         assertThat(transactionRepository.findAll(), empty());
 
         assertThat(timeRepository.findAll().size(), equalTo(1));
-        assertThat(timeRepository.findAll().get(0).getShift(), equalTo(0));
+        assertThat(utcEqualCalendar(timeRepository.findAll().get(0).getUtc(), Calendar.getInstance()), is(true));
     }
 
     @Test
@@ -154,6 +156,19 @@ public class TimeServiceTest extends BoilerplateTest {
 
         timeService.reset();
         assertThat(timeService.getDate().getDate(), equalTo((new SimpleDateFormat("yyyy-MM-dd")).format(new Date())));
+    }
+
+    private boolean utcEqualCalendar(long utc, Calendar calendar) {
+        Calendar serverCalendar = Calendar.getInstance();
+        serverCalendar.setTime(new Date(utc));
+
+        if (serverCalendar.get(Calendar.YEAR) != calendar.get(Calendar.YEAR))
+            return false;
+        if (serverCalendar.get(Calendar.MONTH) != calendar.get(Calendar.MONTH))
+            return false;
+        if (serverCalendar.get(Calendar.DAY_OF_MONTH) != calendar.get(Calendar.DAY_OF_MONTH))
+            return false;
+        return true;
     }
 
 }

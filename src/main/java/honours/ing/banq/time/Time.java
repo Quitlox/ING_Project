@@ -20,44 +20,20 @@ public class Time {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    private int shift;
+    private long utc;
 
-    public Time() {}
+    private Time() {}
 
-    public Time(int shift) {
-        this.shift = shift;
+    public Time(long utc) {
+        this.utc = utc;
     }
 
-    public Integer getId() {
-        return id;
+    public long getUtc() {
+        return utc;
     }
 
-    public int getShift() {
-        return shift;
-    }
-
-    public void setShift(int shift) {
-        this.shift = shift;
-    }
-
-    /**
-     * Returns true if the given string conforms the database date format, false otherwise.
-     *
-     * @param date A string representing a date
-     * @return True is success, false otherwise
-     */
-    public static boolean checkDate(String date) {
-        try {
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            if (date.equals(dateFormat.format(dateFormat.parse(date)))) {
-                return true;
-            }
-        } catch (ParseException e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
-        }
-
-        return false;
+    public void setUtc(long utc) {
+        this.utc = utc;
     }
 
 }

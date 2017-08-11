@@ -62,6 +62,8 @@ public class BoilerplateTest {
 
     @Before
     public void setUp() throws Exception {
+        timeService.reset();
+
         account1 = new TestAccountInfo(new AccountInfo(bankAccountService.openAccount("Jan", "Jansen", "J.", "1996-1-1",
                                                                                       "1234567890", "Klaverstraat 1",
                                                                                       "0612345678",
@@ -81,7 +83,6 @@ public class BoilerplateTest {
                 (0d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
                 (0d));
-
     }
 
 }

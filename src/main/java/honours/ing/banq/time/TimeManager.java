@@ -37,7 +37,7 @@ public class TimeManager {
     public void contextRefreshedEvent() {
         List<Time> times = timeRepository.findAll();
         if (times != null && times.size() == 0) {
-            Time initialTime = new Time(0);
+            Time initialTime = new Time(new Date().getTime());
             timeRepository.save(initialTime);
         }
     }

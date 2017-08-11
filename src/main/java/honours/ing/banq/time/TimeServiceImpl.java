@@ -51,6 +51,7 @@ public class TimeServiceImpl implements TimeService {
 
     @Override
     public void simulateTime(int nrOfDays) throws InvalidParamValueError {
+        // Delete previous
         List<Time> times = timeRepository.findAll();
         if (times.size() != 1) {
             throw new IllegalStateException("There should only be one time entry in the database.");
@@ -69,7 +70,10 @@ public class TimeServiceImpl implements TimeService {
         List<Time> times = timeRepository.findAll();
 
         Time time = times.get(0);
-        time.setShift(time.getShift() + 1);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date(time.getUtc()));
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        time.setUtc(calendar.getTime().getTime());
         timeRepository.save(time);
 
         // Simulate Interest
@@ -85,7 +89,7 @@ public class TimeServiceImpl implements TimeService {
         transactionRepository.deleteAll();
         customerRepository.deleteAll();
 
-        timeRepository.findAll().get(0).setShift(0);
+        timeRepository.findAll().get(0).setUtc(new Date().getTime());
     }
 
     @Override
@@ -95,9 +99,14 @@ public class TimeServiceImpl implements TimeService {
             throw new IllegalStateException("There should only be one time entry in the database.");
         }
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, times.get(0).getShift());
-        return new DateBean(calendar.getTime());
+
+        Calendar serverCalendar = Calendar.getInstance();
+        serverCalendar.setTime(new Date(times.get(0).getUtc()));
+
+        // Only change date, not time
+        Calendar systemCalendar = Calendar.getInstance();
+        systemCalendar.set(serverCalendar.get(Calendar.YEAR), serverCalendar.get(Calendar.MONTH), serverCalendar.get(Calendar.DAY_OF_MONTH));
+        return new DateBean(systemCalendar.getTime());
     }
 
     @Override
@@ -107,9 +116,13 @@ public class TimeServiceImpl implements TimeService {
             throw new IllegalStateException("There should only be one time entry in the database.");
         }
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, times.get(0).getShift());
-        return calendar.getTime();
+        Calendar serverCalendar = Calendar.getInstance();
+        serverCalendar.setTime(new Date(times.get(0).getUtc()));
+
+        // Only change date, not time
+        Calendar systemCalendar = Calendar.getInstance();
+        systemCalendar.set(serverCalendar.get(Calendar.YEAR), serverCalendar.get(Calendar.MONTH), serverCalendar.get(Calendar.DAY_OF_MONTH));
+        return systemCalendar.getTime();
     }
 
 }

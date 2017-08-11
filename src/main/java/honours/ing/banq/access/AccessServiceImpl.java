@@ -44,7 +44,6 @@ public class AccessServiceImpl implements AccessService {
     @Autowired
     private CustomerRepository customerRepository;
 
-    @Transactional
     @Override
     public NewCardBean provideAccess(String authToken, String iBAN, String username) throws InvalidParamValueError, NotAuthorizedError, NoEffectError {
         Customer customer = auth.getAuthorizedCustomer(authToken);
@@ -82,7 +81,6 @@ public class AccessServiceImpl implements AccessService {
         return new NewCardBean(card);
     }
 
-    @Transactional
     @Override
     public void revokeAccess(String authToken, String iBAN, String username) throws InvalidParamValueError, NotAuthorizedError, NoEffectError {
         Customer customer = auth.getAuthorizedCustomer(authToken);

@@ -82,7 +82,6 @@ public class InfoServiceImpl implements InfoService {
                                                           iBAN);
     }
 
-    @Transactional
     @Override
     public List<UserAccessBean> getUserAccess(String authToken) throws NotAuthorizedError {
         Customer customer = auth.getAuthorizedCustomer(authToken);

@@ -3,6 +3,7 @@ package honours.ing.banq.account;
 import honours.ing.banq.BoilerplateTest;
 import honours.ing.banq.InvalidParamValueError;
 import honours.ing.banq.account.bean.NewAccountBean;
+import honours.ing.banq.auth.NotAuthorizedError;
 import honours.ing.banq.info.bean.UserAccessBean;
 import honours.ing.banq.util.IBANUtil;
 import honours.ing.banq.util.StringUtil;
@@ -78,10 +79,27 @@ public class BankAccountServiceTest extends BoilerplateTest {
 
     @Test
     public void closeAccount() throws Exception {
-        List<UserAccessBean> list = infoService.getUserAccess(account1.token);
-        for (UserAccessBean userAccessBean : list) {
-            bankAccountService.closeAccount(account1.token, userAccessBean.getiBan());
-        }
+        bankAccountService.closeAccount(account1.token, account1.iBan);
+        bankAccountService.closeAccount(account2.token, account2.iBan);
+    }
+
+    @Test(expected = InvalidParamValueError.class)
+    public void closeAccountPositiveBalance() throws Exception {
+        transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 1000d);
+        bankAccountService.closeAccount(account1.token, account1.iBan);
+    }
+
+    @Test(expected = InvalidParamValueError.class)
+    public void closeAccountNegativeBalance() throws Exception {
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, account2.username, 500d, "Test Transaction, please ignore");
+        bankAccountService.closeAccount(account1.token, account1.iBan);
+    }
+
+    @Test(expected = NotAuthorizedError.class)
+    public void closeAccountNonExistant() throws Exception {
+        bankAccountService.closeAccount(account1.token, account1.iBan);
+        bankAccountService.closeAccount(account1.token, account1.iBan);
     }
 
     @Test(expected = InvalidParamValueError.class)
@@ -93,7 +111,31 @@ public class BankAccountServiceTest extends BoilerplateTest {
     public void setOverdraftLimit() throws Exception {
         bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
 
-        //
+        // Should be able to transfer up to 1000
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, account2.username, 1000d, "Test Transaction, please ignore");
+
+        // Close Account
+        transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 1000d);
+        bankAccountService.closeAccount(account1.token, account1.iBan);
+    }
+
+    @Test(expected = InvalidParamValueError.class)
+    public void setOverdraftLimitOverdraftWithDefaultOverdraft() throws Exception {
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, account2.username, 1000d, "Test Transaction, please ignore");
+    }
+
+    public void setOverdraftLimitOverdraftWithAlteredOverdraft() throws Exception {
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, account2.username, 1000d, "Test Transaction, please ignore");
+        exception.expect(InvalidParamValueError.class);
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, account2.username, 1d, "Test Transaction, please ignore");
+    }
+
+    @Test
+    public void getOverdraftLimit() throws Exception {
+        assertThat(bankAccountService.getOverdraftLimit(account1.token, account1.iBan).getOverdraftLimit(), equalTo(0d));
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 500d);
+        assertThat(bankAccountService.getOverdraftLimit(account1.token, account1.iBan).getOverdraftLimit(), equalTo(500d));
     }
 
 }

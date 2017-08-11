@@ -2,15 +2,18 @@ package honours.ing.banq.time;
 
 import honours.ing.banq.BoilerplateTest;
 import honours.ing.banq.InvalidParamValueError;
+import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.auth.InvalidPINError;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Timer;
+import java.util.GregorianCalendar;
 
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.*;
 
@@ -20,8 +23,14 @@ import static org.junit.Assert.*;
  */
 public class TimeServiceTest extends BoilerplateTest {
 
+    // Repositories
     @Autowired
     private TimeRepository timeRepository;
+
+    // Fields
+    private static final double PRECISION = 0.01;
+    private static final double STARTING_AMOUNT = -1000d;
+    private static final int SHIFT = 305;
 
     @Test
     public void simulateTime() throws Exception {
@@ -33,21 +42,60 @@ public class TimeServiceTest extends BoilerplateTest {
         time = timeRepository.findAll().get(0);
         assertThat(time.getShift(), equalTo(0));
 
-        // Shift 1
-        timeService.simulateTime(365);
-        assertThat(timeRepository.findAll().size(), equalTo(1));
-        time = timeRepository.findAll().get(0);
-        assertThat(time.getShift(), equalTo(365));
+        // Setup Account to receive interest
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, account2.username, 1000d,
+                                         "Test Transaction, please ignore");
 
-        // Shift 2
-        timeService.simulateTime(10);
+        // Shift 1
+        timeService.simulateTime(SHIFT);
         assertThat(timeRepository.findAll().size(), equalTo(1));
         time = timeRepository.findAll().get(0);
-        assertThat(time.getShift(), equalTo(375));
+        assertThat(time.getShift(), equalTo(SHIFT));
 
         // Reset authentication
         account1.token = authService.getAuthToken(account1.username, account1.password).getAuthToken();
-        account2.token = authService.getAuthToken(account2.username, account2.password).getAuthToken();
+
+        // Check Interest
+        GregorianCalendar calendar = (GregorianCalendar) GregorianCalendar.getInstance();
+        double total = STARTING_AMOUNT;
+        double charged = STARTING_AMOUNT;
+        for (int i = 0; i < SHIFT; i++) {
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+
+            if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+                charged = total;
+            }
+
+            total += charged * BankAccount.INTEREST_MONTHLY / calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        }
+
+        assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), closeTo(charged, PRECISION));
+
+        // Shift 2
+        timeService.simulateTime(SHIFT);
+        assertThat(timeRepository.findAll().size(), equalTo(1));
+        time = timeRepository.findAll().get(0);
+        assertThat(time.getShift(), equalTo(SHIFT + SHIFT));
+
+        // Reset authentication
+        account1.token = authService.getAuthToken(account1.username, account1.password).getAuthToken();
+
+        // Check Interest
+        for (int i = 0; i < SHIFT; i++) {
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+
+            if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+                charged = total;
+            }
+
+            total += charged * BankAccount.INTEREST_MONTHLY / calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        }
+
+        assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), closeTo(charged, PRECISION));
+
+        // Reset authentication
+        account1.token = authService.getAuthToken(account1.username, account1.password).getAuthToken();
     }
 
     @Test(expected = InvalidParamValueError.class)
@@ -100,8 +148,8 @@ public class TimeServiceTest extends BoilerplateTest {
         timeService.reset();
         time = timeRepository.findAll().get(0);
         assertThat(time.getShift(), equalTo(0));
-        Thread.sleep(1500); // Otherwise the current date will be equal to the date of the first three transactions,
-                            // causing them to be deleted
+        Thread.sleep(2000); // Otherwise the current date will be equal to the date of the first three transactions,
+        // causing them to be deleted
         timeService.simulateTime(1);
 
         // Reset authentication
@@ -141,6 +189,53 @@ public class TimeServiceTest extends BoilerplateTest {
 
         // Transaction, throws InvalidParamValueError
         transactionService.payFromAccount(account1.iBan, account2.iBan, account1.cardNumber, account1.pin, 25d);
+    }
+
+    @Test
+    public void resetInterest() throws Exception {
+        Time time;
+
+        // Check state
+        assertThat(timeRepository.findAll().size(), equalTo(1));
+        time = timeRepository.findAll().get(0);
+
+        // Setup Account to receive interest
+        bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
+        transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, account2.username, 1000d,
+                                         "Test Transaction, please ignore");
+
+        // Shift
+        timeService.simulateTime(SHIFT);
+        assertThat(timeRepository.findAll().size(), equalTo(1));
+        time = timeRepository.findAll().get(0);
+        assertThat(time.getShift(), equalTo(SHIFT));
+
+        // Reset authentication
+        account1.token = authService.getAuthToken(account1.username, account1.password).getAuthToken();
+
+        // Check Interest
+        GregorianCalendar calendar = (GregorianCalendar) GregorianCalendar.getInstance();
+        double total = STARTING_AMOUNT;
+        double charged = STARTING_AMOUNT;
+        for (int i = 0; i < SHIFT; i++) {
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+
+            if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+                charged = total;
+            }
+
+            total += charged * BankAccount.INTEREST_MONTHLY / calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        }
+
+        assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), closeTo(charged, PRECISION));
+
+        // Reset Time
+        timeService.reset();
+        time = timeRepository.findAll().get(0);
+        assertThat(time.getShift(), equalTo(0));
+
+        // Check BankAccounts
+        assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), closeTo(STARTING_AMOUNT, PRECISION));
     }
 
     @Test

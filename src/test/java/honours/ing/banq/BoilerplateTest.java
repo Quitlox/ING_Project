@@ -8,17 +8,16 @@ import honours.ing.banq.config.TestConfiguration;
 import honours.ing.banq.info.InfoService;
 import honours.ing.banq.time.TimeService;
 import honours.ing.banq.transaction.TransactionService;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.transaction.AfterTransaction;
-import org.springframework.test.context.transaction.BeforeTransaction;
 
 import javax.transaction.Transactional;
 
@@ -56,9 +55,12 @@ public class BoilerplateTest {
     protected TimeService timeService;
 
     // Fields
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
+
     protected TestAccountInfo account1, account2;
 
-    @BeforeTransaction
+    @Before
     public void setUp() throws Exception {
         account1 = new TestAccountInfo(new AccountInfo(bankAccountService.openAccount("Jan", "Jansen", "J.", "1996-1-1",
                                                                                       "1234567890", "Klaverstraat 1",
@@ -82,14 +84,6 @@ public class BoilerplateTest {
 
         // Reset time
         timeService.reset();
-    }
-
-    @AfterTransaction
-    public void tearDown() throws Exception {
-        account1.token = authService.getAuthToken("jantje96", "1234").getAuthToken();
-        account2.token = authService.getAuthToken("piet1", "1234").getAuthToken();
-        bankAccountService.closeAccount(account1.token, account1.iBan);
-        bankAccountService.closeAccount(account2.token, account2.iBan);
     }
 
 }

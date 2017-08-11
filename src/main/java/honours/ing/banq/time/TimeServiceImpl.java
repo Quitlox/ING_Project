@@ -8,13 +8,12 @@ import honours.ing.banq.time.bean.DateBean;
 import honours.ing.banq.transaction.Transaction;
 import honours.ing.banq.transaction.TransactionRepository;
 import honours.ing.banq.util.IBANUtil;
+import org.aspectj.apache.bcel.generic.FieldOrMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Kevin Witlox
@@ -39,7 +38,6 @@ public class TimeServiceImpl implements TimeService {
 
     @Override
     public void simulateTime(int nrOfDays) throws InvalidParamValueError {
-        // Delete previous
         List<Time> times = timeRepository.findAll();
         if (times.size() != 1) {
             throw new IllegalStateException("There should only be one time entry in the database.");
@@ -49,12 +47,19 @@ public class TimeServiceImpl implements TimeService {
             throw new InvalidParamValueError("The nrOfDays should be positive.");
         }
 
+        for (int i = 0; i < nrOfDays; i++) {
+            simulateDay();
+        }
+    }
+
+    private void simulateDay() {
+        List<Time> times = timeRepository.findAll();
+
         Time time = times.get(0);
-        time.setShift(time.getShift() + nrOfDays);
+        time.setShift(time.getShift() + 1);
         timeRepository.save(time);
 
         // Simulate Interest
-        timeManager.calculateInterest(BankAccount.INTEREST_MONTHLY, nrOfDays);
         timeManager.calculateInterest();
     }
 
@@ -63,10 +68,37 @@ public class TimeServiceImpl implements TimeService {
         // Delete previous entry
         List<Time> times = timeRepository.findAll();
         int shift = times.get(0).getShift();
-        timeRepository.delete(times);
-        // Reset time to current time
-        Time time = new Time(0);
-        timeRepository.save(time);
+        Calendar startDate = TimeManager.toCalendar(getDateObject());
+        startDate.add(Calendar.DAY_OF_MONTH, -shift + 1);
+
+        List<BankAccount> bankAccounts = bankAccountRepository.findAll();
+        Calendar today = TimeManager.toCalendar(getDateObject());
+        Calendar firstOfLastMonth = TimeManager.toCalendar(getDateObject());
+        firstOfLastMonth.set(Calendar.DAY_OF_MONTH, 1);
+
+        double percentage = 0;
+        while (today.after(startDate)) {
+            double dailyRate = BankAccount.INTEREST_MONTHLY /
+                               TimeManager.toCalendar(getDateObject()).getActualMaximum(Calendar.DAY_OF_MONTH);
+            if (today.after(firstOfLastMonth)) {
+                for (BankAccount bankAccount : bankAccounts) {
+                    bankAccount.addBuiltInterest(bankAccount.getBalance() * dailyRate);
+                }
+            } else {
+                percentage += dailyRate;
+            }
+
+            times.get(0).setShift(times.get(0).getShift() - 1);
+            today = TimeManager.toCalendar(getDateObject());
+        }
+
+        for (BankAccount bankAccount : bankAccounts) {
+            bankAccount.subBalance(bankAccount.getBalance() - bankAccount.getBalance() / (1 + percentage));
+        }
+
+        // Save
+        bankAccountRepository.save(bankAccounts);
+        timeRepository.save(times);
 
         // Revert transactions
         List<Transaction> futureTransactions = transactionRepository.findAllByDateAfter(getDateObject());
@@ -83,11 +115,20 @@ public class TimeServiceImpl implements TimeService {
             destination.subBalance(transaction.getAmount());
             bankAccountRepository.save(destination);
         }
-        transactionRepository.delete(futureTransactions);
 
-        // Revert Interest
-        timeManager.calculateInterest(1 / BankAccount.INTEREST_MONTHLY, shift);
-        timeManager.calculateInterest();
+        transactionRepository.delete(futureTransactions);
+    }
+
+    private void resetDay() {
+        List<Time> times = timeRepository.findAll();
+
+        // Calculate Interest
+        timeManager.calculateReverseInterest();
+
+        Time time = times.get(0);
+        time.setShift(time.getShift() - 1);
+        timeRepository.save(time);
+
     }
 
     @Override

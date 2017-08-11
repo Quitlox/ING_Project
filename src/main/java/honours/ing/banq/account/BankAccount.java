@@ -3,6 +3,7 @@ package honours.ing.banq.account;
 import honours.ing.banq.customer.Customer;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class BankAccount {
     @Transient
     private static final double INTEREST_ANNUAL = 0.1d;
     @Transient
-    public static final double INTEREST_MONTHLY = Math.pow((double) 1 + INTEREST_ANNUAL, 1 / 12) - 1;
+    public static final double INTEREST_MONTHLY = Math.pow(1d + INTEREST_ANNUAL, 1d / 12d) - 1;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

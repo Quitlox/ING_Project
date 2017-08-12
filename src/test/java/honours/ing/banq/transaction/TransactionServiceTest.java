@@ -61,11 +61,11 @@ public class TransactionServiceTest extends BoilerplateTest {
     public void payFromAccount() throws Exception {
         // Make sure source iBan has balance
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber,
-                account1.pin, 200d);
+                                              account1.pin, 200d);
 
         // Transaction
         transactionService.payFromAccount(account1.iBan, account2.iBan,
-                account1.cardNumber, account1.pin, 200d);
+                                          account1.cardNumber, account1.pin, 200d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (0d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -76,11 +76,11 @@ public class TransactionServiceTest extends BoilerplateTest {
     public void payFromAccountWrongPinCode() throws Exception {
         // Make sure source iBan has balance
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber,
-                account1.pin, 200d);
+                                              account1.pin, 200d);
 
         // Transaction
         transactionService.payFromAccount(account1.iBan, account2.iBan,
-                account1.cardNumber, "-1", 200d);
+                                          account1.cardNumber, "-1", 200d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -91,11 +91,11 @@ public class TransactionServiceTest extends BoilerplateTest {
     public void payFromAccountWrongPinCard() throws Exception {
         // Make sure source iBan has balance
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber,
-                account1.pin, 200d);
+                                              account1.pin, 200d);
 
         // Transaction
         transactionService.payFromAccount(account1.iBan, account2.iBan,
-                "-1", account1.pin, 200d);
+                                          "-1", account1.pin, 200d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -106,11 +106,11 @@ public class TransactionServiceTest extends BoilerplateTest {
     public void payFromAccountWrongSourceiBan() throws Exception {
         // Make sure source iBan has balance
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber,
-                account1.pin, 200d);
+                                              account1.pin, 200d);
 
         // Transaction
         transactionService.payFromAccount("null", account2.iBan,
-                account1.cardNumber, account1.pin, 200d);
+                                          account1.cardNumber, account1.pin, 200d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
     }
@@ -119,11 +119,11 @@ public class TransactionServiceTest extends BoilerplateTest {
     public void payFromAccountWrongTargetiBan() throws Exception {
         // Make sure source iBan has balance
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber,
-                account1.pin, 200d);
+                                              account1.pin, 200d);
 
         // Transaction
         transactionService.payFromAccount(account1.iBan, "null",
-                account1.cardNumber, account1.pin, 200d);
+                                          account1.cardNumber, account1.pin, 200d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -134,13 +134,13 @@ public class TransactionServiceTest extends BoilerplateTest {
     public void payFromAccountNotEnoughBalance() throws Exception {
         // Make sure source iBan has balance
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber,
-                account1.pin, 200d);
+                                              account1.pin, 200d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
 
         // Transaction
         transactionService.payFromAccount(account1.iBan, account2.iBan,
-                account1.cardNumber, account1.pin, 201d);
+                                          account1.cardNumber, account1.pin, 201d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -151,13 +151,13 @@ public class TransactionServiceTest extends BoilerplateTest {
     public void payFromAccountNegativeAmount() throws Exception {
         // Make sure source iBan has balance
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber,
-                account1.pin, 200d);
+                                              account1.pin, 200d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
 
         // Transaction
         transactionService.payFromAccount(account1.iBan, account2.iBan,
-                account1.cardNumber, account1.pin, -200d);
+                                          account1.cardNumber, account1.pin, -200d);
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -165,15 +165,51 @@ public class TransactionServiceTest extends BoilerplateTest {
     }
 
     @Test
-    public void transferMoney() throws Exception {
+    public void transferMoneyBankAccount() throws Exception {
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
 
         transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, "Piet Pietersen",
-                200d, "Geld");
+                                         200d, "Geld");
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (0d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
                 (200d));
+    }
+
+    @Test
+    public void transferMoneySavingsAccount() throws Exception {
+        transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
+
+        transactionService.transferMoney(account1.token, account1.iBan, account1.iBan + "S", "Piet Pietersen",
+                                         200d, "Geld");
+        assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
+                (0d));
+        assertThat(infoService.getBalance(account1.token, account1.iBan + "S").getBalance(), equalTo
+                (200d));
+        transactionService.transferMoney(account1.token, account1.iBan + "S", account1.iBan, "Piet Pietersen",
+                                         200d, "Geld");
+        assertThat(infoService.getBalance(account1.token, account1.iBan + "S").getBalance(), equalTo
+                (0d));
+        assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
+                (200d));
+    }
+
+    @Test
+    public void transferMoneySavingsAccountWrongDestination() throws Exception {
+        transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
+        transactionService.transferMoney(account1.token, account1.iBan, account1.iBan + "S", "Piet Pietersen",
+                                         200d, "Geld");
+
+        transactionService.transferMoney(account1.token, account1.iBan + "S", account2.iBan, "Piet Pietersen",
+                                         200d, "Geld");
+    }
+
+    @Test
+    public void transferMoneySavingsAccountWrongSource() throws Exception {
+        transactionService.depositIntoAccount(account2.iBan, account2.cardNumber, account2.pin, 200d);
+
+        transactionService.transferMoney(account2.token, account2.iBan, account1.iBan + "S", "Piet Pietersen",
+                                         200d, "Geld");
     }
 
     @Test(expected = NotAuthorizedError.class)
@@ -181,7 +217,7 @@ public class TransactionServiceTest extends BoilerplateTest {
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
 
         transactionService.transferMoney(account2.token, account1.iBan, account2.iBan, "Piet Pietersen",
-                200d, "Geld");
+                                         200d, "Geld");
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -189,11 +225,11 @@ public class TransactionServiceTest extends BoilerplateTest {
     }
 
     @Test(expected = NotAuthorizedError.class)
-    public void transferMoneyUnauthorizedSourceiBan() throws Exception {
+    public void transferMoneyUnauthorizedSourceIBAN() throws Exception {
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
 
         transactionService.transferMoney(account1.token, account2.iBan, account2.iBan, "Piet Pietersen",
-                200d, "Geld");
+                                         200d, "Geld");
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -201,7 +237,7 @@ public class TransactionServiceTest extends BoilerplateTest {
     }
 
     @Test(expected = InvalidParamValueError.class)
-    public void transferMoneyNonExistantTargetiBan() throws Exception
+    public void transferMoneyNonExistantTargetIBAN() throws Exception
 
     {
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
@@ -216,7 +252,7 @@ public class TransactionServiceTest extends BoilerplateTest {
     @Test(expected = InvalidParamValueError.class)
     public void transferMoneyNegativeBalance() throws Exception {
         transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, "Piet Pietersen",
-                -200d, "Geld");
+                                         -200d, "Geld");
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo
@@ -228,7 +264,7 @@ public class TransactionServiceTest extends BoilerplateTest {
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
 
         transactionService.transferMoney(account1.token, account1.iBan, account2.iBan, "Piet Pietersen",
-                201d, "Geld");
+                                         201d, "Geld");
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
         assertThat(infoService.getBalance(account2.token, account2.iBan).getBalance(), equalTo

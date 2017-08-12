@@ -13,7 +13,7 @@ import java.util.List;
  * @author Jeffrey Bakker
  */
 @Entity
-public class BankAccount {
+public class BankAccount extends Account {
 
     @Transient
     private static final double INTEREST_ANNUAL = 0.1d;
@@ -24,13 +24,7 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private Double balance;
-
     private Double overdraftLimit;
-
-    private Double dailyLow;
-
-    private Double builtInterest;
 
     @OneToOne(cascade = CascadeType.ALL)
     @PrimaryKeyJoinColumn
@@ -50,10 +44,6 @@ public class BankAccount {
 
     public BankAccount(Customer primaryHolder) {
         this.primaryHolder = primaryHolder;
-        balance = 0d;
-        overdraftLimit = 0d;
-        dailyLow = 0d;
-        builtInterest = 0d;
         holders = new ArrayList<>();
 
         savingsAccount = null;
@@ -61,15 +51,6 @@ public class BankAccount {
 
     public Integer getId() {
         return id;
-    }
-
-    public Double getBalance() {
-        return balance;
-    }
-
-    public void subBalance(Double balance) {
-        this.balance -= balance;
-        this.dailyLow = this.balance;
     }
 
     public void addBalance(Double balance) {
@@ -82,26 +63,6 @@ public class BankAccount {
 
     public void setOverdraftLimit(Double overdraftLimit) {
         this.overdraftLimit = overdraftLimit;
-    }
-
-    public Double getDailyLow() {
-        return dailyLow;
-    }
-
-    public void setDailyLow(Double dailyLow) {
-        this.dailyLow = dailyLow;
-    }
-
-    public void resetBuiltInterest() {
-        this.builtInterest = 0d;
-    }
-
-    public void addBuiltInterest(Double builtInterest) {
-        this.builtInterest += builtInterest;
-    }
-
-    public Double getBuiltInterest() {
-        return builtInterest;
     }
 
     public Customer getPrimaryHolder() {

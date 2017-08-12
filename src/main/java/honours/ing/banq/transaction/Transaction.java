@@ -28,7 +28,7 @@ public class Transaction {
      * An empty constructor for the spring framework.
      * @deprecated
      */
-    public Transaction() {}
+    private Transaction() {}
 
     public Transaction(String source, String destination, String targetName, Date date, Double amount, String description) {
         this.source = source;

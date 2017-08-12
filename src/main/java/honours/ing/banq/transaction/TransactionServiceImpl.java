@@ -2,6 +2,7 @@ package honours.ing.banq.transaction;
 
 import com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImpl;
 import honours.ing.banq.InvalidParamValueError;
+import honours.ing.banq.account.Account;
 import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.account.BankAccountRepository;
 import honours.ing.banq.auth.AuthService;
@@ -75,7 +76,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         // Save transaction
         Transaction transaction = new Transaction(null, iBAN, bankAccount.getPrimaryHolder()
-                .getName(), timeService.getDateObject(), amount, "Deposit");
+                                                                         .getName(), timeService.getDateObject(),
+                                                  amount, "Deposit");
         transactionRepository.save(transaction);
     }
 
@@ -121,40 +123,67 @@ public class TransactionServiceImpl implements TransactionService {
     public void transferMoney(String authToken, String sourceIBAN, String targetIBAN, String
             targetName, Double amount, String description) throws InvalidParamValueError,
             NotAuthorizedError {
+        boolean savingsAccount = false;
+        if (sourceIBAN.substring(sourceIBAN.length() - 1).equals("S")) {
+            savingsAccount = true;
+            sourceIBAN = sourceIBAN.substring(sourceIBAN.length() - 1);
+        }
+
         if (!IBANUtil.isValidIBAN(sourceIBAN)) {
             throw new InvalidParamValueError("The given source IBAN is not valid.");
         }
 
-        BankAccount fromBankAccount = bankAccountRepository.findOne((int) IBANUtil
+        BankAccount sourceBankAccount = bankAccountRepository.findOne((int) IBANUtil
                 .getAccountNumber(sourceIBAN));
-        BankAccount toBankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
+        BankAccount targetBankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
                 (targetIBAN));
         Customer customer = auth.getAuthorizedCustomer(authToken);
 
         // Check if bank account is held by customer
-        if (!fromBankAccount.getHolders().contains(customer) && !fromBankAccount.getPrimaryHolder
+        if (!sourceBankAccount.getHolders().contains(customer) && !sourceBankAccount.getPrimaryHolder
                 ().equals(customer)) {
             throw new NotAuthorizedError();
         }
 
-        // Check balance
-        if (fromBankAccount.getBalance() - amount < -fromBankAccount.getOverdraftLimit()) {
-            throw new InvalidParamValueError("Not enough balance on account.");
-        }
-
+        // Check amount
         if (amount <= 0) {
             throw new InvalidParamValueError("Amount should be greater than 0.");
         }
 
+        Account sourceAccount = sourceBankAccount;
+
+        if (savingsAccount) {
+            sourceAccount = sourceBankAccount.getSavingsAccount();
+
+            // Check balance
+            if (sourceAccount.getBalance() - amount < 0) {
+                throw new InvalidParamValueError("Not enough balance on account.");
+            }
+
+            // Check Destination
+            if (!targetBankAccount.equals(sourceBankAccount)) {
+                throw new InvalidParamValueError("The targetBankAccount should be the holder of the SavingsAccount.");
+            }
+        } else {
+            // Check balance
+            if (sourceBankAccount.getBalance() - amount < -sourceBankAccount.getOverdraftLimit()) {
+                throw new InvalidParamValueError("Not enough balance on account.");
+            }
+        }
+
         // Update balance
-        fromBankAccount.subBalance(amount);
-        toBankAccount.addBalance(amount);
-        bankAccountRepository.save(fromBankAccount);
-        bankAccountRepository.save(toBankAccount);
+        sourceAccount.subBalance(amount);
+        targetBankAccount.addBalance(amount);
+        bankAccountRepository.save(sourceBankAccount);
+        bankAccountRepository.save(targetBankAccount);
 
         // Save Transaction
-        Transaction transaction = new Transaction(sourceIBAN, targetIBAN, targetName, timeService.getDateObject()
-                , amount, description);
+        if (savingsAccount) {
+            sourceIBAN += "S";
+        }
+
+        Transaction transaction = new Transaction(sourceIBAN, targetIBAN, targetName, timeService.getDateObject(),
+                                                  amount, description);
         transactionRepository.save(transaction);
     }
 

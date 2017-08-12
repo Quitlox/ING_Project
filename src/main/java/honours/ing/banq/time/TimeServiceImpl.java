@@ -2,16 +2,12 @@ package honours.ing.banq.time;
 
 import honours.ing.banq.InvalidParamValueError;
 import honours.ing.banq.access.NoEffectError;
-import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.account.BankAccountRepository;
 import honours.ing.banq.auth.AuthRepository;
 import honours.ing.banq.card.CardRepository;
 import honours.ing.banq.customer.CustomerRepository;
 import honours.ing.banq.time.bean.DateBean;
-import honours.ing.banq.transaction.Transaction;
 import honours.ing.banq.transaction.TransactionRepository;
-import honours.ing.banq.util.IBANUtil;
-import org.aspectj.apache.bcel.generic.FieldOrMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -77,7 +73,8 @@ public class TimeServiceImpl implements TimeService {
         timeRepository.save(time);
 
         // Simulate Interest
-        timeManager.calculateInterest();
+        timeManager.calculateBankAccountInterest();
+        timeManager.calculateSavingsAccountInterest();
     }
 
     @Override

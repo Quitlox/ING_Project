@@ -115,8 +115,8 @@ public class BankAccountServiceImpl implements BankAccountService {
             throw new NotAuthorizedError();
         }
 
-        if (account.getBalance() != 0) {
-            throw new InvalidParamValueError("Can not close BankAccount with a non zero balance.");
+        if (account.getBalance() != 0 || account.getSavingsAccount().getBalance() != 0) {
+            throw new InvalidParamValueError("Can not close BankAccount/SavingsAccount with a non zero balance.");
         }
 
         // Delete cards

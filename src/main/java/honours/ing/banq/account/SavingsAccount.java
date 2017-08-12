@@ -9,9 +9,6 @@ import javax.persistence.*;
 @Entity
 public class SavingsAccount extends Account{
 
-    @Id @Column(name = "id")
-    private Integer id;
-
     @MapsId
     @OneToOne(mappedBy = "savings_account")
     @JoinColumn(name = "id")

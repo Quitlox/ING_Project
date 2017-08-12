@@ -1,7 +1,9 @@
 package honours.ing.banq.util;
 
 import honours.ing.banq.InvalidParamValueError;
+import honours.ing.banq.account.Account;
 import honours.ing.banq.account.BankAccount;
+import honours.ing.banq.account.SavingsAccount;
 
 public class IBANUtil {
 
@@ -28,8 +30,9 @@ public class IBANUtil {
         return Long.parseLong(iBAN.substring(8, iBAN.length()));
     }
 
-    public static String generateIBAN(BankAccount account) {
-        return generateIBAN(account.getId());
+    public static String generateIBAN(Account account) {
+        String res = generateIBAN(account.getId());
+        return (account instanceof SavingsAccount) ? res + "S" : res;
     }
 
     public static String generateIBAN(long accountNumber) {
@@ -65,6 +68,20 @@ public class IBANUtil {
         int r = (int) (nr % 97);
 
         return r < 10 ? "0" + r : String.valueOf(r);
+    }
+
+    public static boolean isSavingsAccount(String iBan) {
+        return iBan.substring(iBan.length() - 1).equals("S");
+    }
+
+    public static String convertToBankAccount(String iBan) {
+        String res = iBan;
+
+        if (isSavingsAccount(iBan)){
+            iBan = iBan.substring(iBan.length() - 1);
+        }
+
+        return res;
     }
 
 }

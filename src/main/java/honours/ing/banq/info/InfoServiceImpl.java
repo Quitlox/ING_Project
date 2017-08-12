@@ -2,7 +2,6 @@ package honours.ing.banq.info;
 
 import com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImpl;
 import honours.ing.banq.InvalidParamValueError;
-import honours.ing.banq.account.Account;
 import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.account.BankAccountRepository;
 import honours.ing.banq.auth.AuthService;
@@ -97,10 +96,16 @@ public class InfoServiceImpl implements InfoService {
         List<UserAccessBean> userAccessBeanList = new ArrayList<>();
         for (BankAccount account : accounts) {
             userAccessBeanList.add(new UserAccessBean(account, account.getPrimaryHolder()));
+            if (account.getSavingsAccount() != null) {
+                userAccessBeanList.add(new UserAccessBean(account.getSavingsAccount(), account.getPrimaryHolder()));
+            }
         }
 
         for (BankAccount account : primaryAccounts) {
             userAccessBeanList.add(new UserAccessBean(account, account.getPrimaryHolder()));
+            if (account.getSavingsAccount() != null) {
+                userAccessBeanList.add(new UserAccessBean(account.getSavingsAccount(), account.getPrimaryHolder()));
+            }
         }
 
         return userAccessBeanList;
@@ -109,6 +114,8 @@ public class InfoServiceImpl implements InfoService {
     @Override
     public List<BankAccountAccessBean> getBankAccountAccess(String authToken, String iBAN) throws
             InvalidParamValueError, NotAuthorizedError {
+        iBAN = IBANUtil.convertToBankAccount(iBAN);
+
         Customer customer = auth.getAuthorizedCustomer(authToken);
         long accountNumber = IBANUtil.getAccountNumber(iBAN);
         BankAccount bankAccount = bankAccountRepository.findOne((int) accountNumber);

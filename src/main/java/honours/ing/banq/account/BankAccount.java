@@ -3,7 +3,6 @@ package honours.ing.banq.account;
 import honours.ing.banq.customer.Customer;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,12 +18,6 @@ public class BankAccount extends Account {
     private static final double INTEREST_ANNUAL = 0.1d;
     @Transient
     public static final double INTEREST_MONTHLY = Math.pow(1d + INTEREST_ANNUAL, 1d / 12d) - 1;
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-
-    private Double overdraftLimit;
 
     @OneToOne(cascade = CascadeType.ALL)
     @PrimaryKeyJoinColumn
@@ -47,18 +40,6 @@ public class BankAccount extends Account {
         holders = new ArrayList<>();
 
         savingsAccount = null;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void addBalance(Double balance) {
-        this.balance += balance;
-    }
-
-    public Double getOverdraftLimit() {
-        return overdraftLimit;
     }
 
     public void setOverdraftLimit(Double overdraftLimit) {

@@ -1,5 +1,6 @@
 package honours.ing.banq.info.bean;
 
+import honours.ing.banq.account.Account;
 import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.customer.Customer;
 import honours.ing.banq.util.IBANUtil;
@@ -15,7 +16,7 @@ public class UserAccessBean {
     private String iBan;
     private String owner;
 
-    public UserAccessBean(BankAccount account, Customer customer) {
+    public UserAccessBean(Account account, Customer customer) {
         this.iBan = IBANUtil.generateIBAN(account);
         this.owner = customer.getName();
     }

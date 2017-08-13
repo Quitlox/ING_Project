@@ -178,17 +178,18 @@ public class TransactionServiceTest extends BoilerplateTest {
 
     @Test
     public void transferMoneySavingsAccount() throws Exception {
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
 
         transactionService.transferMoney(account1.token, account1.iBan, account1.iBan + "S", "Piet Pietersen",
                                          200d, "Geld");
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (0d));
-        assertThat(infoService.getBalance(account1.token, account1.iBan + "S").getBalance(), equalTo
+        assertThat(infoService.getBalance(account1.token, account1.iBan + "S").getSavingsBalance(), equalTo
                 (200d));
         transactionService.transferMoney(account1.token, account1.iBan + "S", account1.iBan, "Piet Pietersen",
                                          200d, "Geld");
-        assertThat(infoService.getBalance(account1.token, account1.iBan + "S").getBalance(), equalTo
+        assertThat(infoService.getBalance(account1.token, account1.iBan + "S").getSavingsBalance(), equalTo
                 (0d));
         assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), equalTo
                 (200d));
@@ -196,18 +197,22 @@ public class TransactionServiceTest extends BoilerplateTest {
 
     @Test
     public void transferMoneySavingsAccountWrongDestination() throws Exception {
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 200d);
         transactionService.transferMoney(account1.token, account1.iBan, account1.iBan + "S", "Piet Pietersen",
                                          200d, "Geld");
 
+        exception.expect(InvalidParamValueError.class);
         transactionService.transferMoney(account1.token, account1.iBan + "S", account2.iBan, "Piet Pietersen",
                                          200d, "Geld");
     }
 
     @Test
     public void transferMoneySavingsAccountWrongSource() throws Exception {
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
         transactionService.depositIntoAccount(account2.iBan, account2.cardNumber, account2.pin, 200d);
 
+        exception.expect(InvalidParamValueError.class);
         transactionService.transferMoney(account2.token, account2.iBan, account1.iBan + "S", "Piet Pietersen",
                                          200d, "Geld");
     }

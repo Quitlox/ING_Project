@@ -90,8 +90,8 @@ public class TimeManager {
                 continue;
             }
 
-            double interest = savingsAccount.getBalance() > 75000d ? 0.2d : 0.15d;
-            savingsAccount.addBuiltInterest(-savingsAccount.getDailyLow() * (Math.pow(1d + interest, 1d /
+            double interest = savingsAccount.getDailyLow() > 75000d ? 0.2d : 0.15d;
+            savingsAccount.addBuiltInterest(savingsAccount.getDailyLow() * (Math.pow(1d + interest, 1d /
                                                                                                      calendar.getActualMaximum(
                                                                                                              Calendar.DAY_OF_YEAR)) -
                                                                              1));
@@ -110,10 +110,13 @@ public class TimeManager {
                 continue;
             }
 
-            Transaction transaction = new Transaction(null, IBANUtil.generateIBAN(bankAccount), bankAccount.getPrimaryHolder().getName(), timeService.getDateObject(), savingsAccount.getBuiltInterest(), "Interest");
+            Transaction transaction = new Transaction(null, IBANUtil.generateIBAN(bankAccount),
+                                                      bankAccount.getPrimaryHolder().getName(),
+                                                      timeService.getDateObject(), savingsAccount.getBuiltInterest(),
+                                                      "Interest");
             transactions.add(transaction);
 
-            savingsAccount.subBalance(savingsAccount.getBuiltInterest());
+            savingsAccount.addBalance(savingsAccount.getBuiltInterest());
             savingsAccount.resetBuiltInterest();
         }
 

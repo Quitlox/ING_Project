@@ -22,4 +22,8 @@ public class BalanceBean {
     public Double getBalance() {
         return bankBalance;
     }
+
+    public Double getSavingsBalance() {
+        return savingsBalance;
+    }
 }

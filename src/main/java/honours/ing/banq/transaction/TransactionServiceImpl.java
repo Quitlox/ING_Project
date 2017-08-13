@@ -164,8 +164,14 @@ public class TransactionServiceImpl implements TransactionService {
         // Update Source/Destination if necessary
         if (sourceIsSavingsAccount) {
             sourceAccount = sourceBankAccount.getSavingsAccount();
+            sourceIBAN += "S";
         } else if (targetIsSavingsAccount) {
             targetAccount = targetBankAccount.getSavingsAccount();
+            targetIBAN += "S";
+
+            if (targetAccount == null) {
+                throw new InvalidParamValueError("The given BankAccount has not opened a SavingsAccount.");
+            }
         }
 
         // Check balance
@@ -178,11 +184,6 @@ public class TransactionServiceImpl implements TransactionService {
         targetAccount.addBalance(amount);
         bankAccountRepository.save(sourceBankAccount);
         bankAccountRepository.save(targetBankAccount);
-
-        // Save Transaction
-        if (sourceIsSavingsAccount) {
-            sourceIBAN += "S";
-        }
 
         Transaction transaction = new Transaction(sourceIBAN, targetIBAN, targetName, timeService.getDateObject(),
                                                   amount, description);

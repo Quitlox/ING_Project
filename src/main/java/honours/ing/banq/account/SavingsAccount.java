@@ -9,24 +9,17 @@ import javax.persistence.*;
 @Entity
 public class SavingsAccount extends Account{
 
-    @MapsId
-    @OneToOne(mappedBy = "savings_account")
-    @JoinColumn(name = "id")
-    private BankAccount bankAccount;
+//    @MapsId
+//    @OneToOne(mappedBy = "savingsAccount")
+//    @JoinColumn(name = "id")
+//    private BankAccount bankAccount;
 
-    private SavingsAccount() {}
-
-    public SavingsAccount(BankAccount bankAccount) {
+    public SavingsAccount() {
         this.balance = 0d;
-        this.bankAccount = bankAccount;
     }
 
     public void setBalance(Double balance) {
         this.balance = balance;
-    }
-
-    public BankAccount getBankAccount() {
-        return bankAccount;
     }
 
 }

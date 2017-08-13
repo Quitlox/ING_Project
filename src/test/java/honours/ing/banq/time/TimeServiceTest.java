@@ -45,7 +45,7 @@ public class TimeServiceTest extends BoilerplateTest {
     private CustomerRepository customerRepository;
 
     // Fields
-    private static final double PRECISION = 0.01;
+    private static final double PRECISION = 0.025;
     private static final double STARTING_AMOUNT = -1000d;
     private static final int SHIFT = 305;
 
@@ -128,6 +128,7 @@ public class TimeServiceTest extends BoilerplateTest {
         assertThat(utcEqualCalendar(time.getUtc(), Calendar.getInstance()), is(true));
 
         // Setup Account to receive interest
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
         bankAccountService.setOverdraftLimit(account1.token, account1.iBan, 1000d);
         transactionService.transferMoney(account1.token, account1.iBan, account1.iBan + "S", account2.username, 1000d,
                                          "Test Transaction, please ignore");
@@ -145,20 +146,20 @@ public class TimeServiceTest extends BoilerplateTest {
 
         // Check SavingsAccount Interest
         GregorianCalendar calendar = (GregorianCalendar) GregorianCalendar.getInstance();
-        double total = STARTING_AMOUNT;
-        double charged = STARTING_AMOUNT;
+        double total = -STARTING_AMOUNT;
+        double charged = -STARTING_AMOUNT;
         for (int i = 0; i < SHIFT; i++) {
             calendar.add(Calendar.DAY_OF_MONTH, 1);
 
-            if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+            if (calendar.get(Calendar.MONTH) == 0 && calendar.get(Calendar.DAY_OF_MONTH) == 1) {
                 charged = total;
             }
 
             double interest = charged > 75000d ? 0.2d : 0.15d;
-            total += -charged * (Math.pow(1d + interest, 1d / calendar.getActualMaximum(Calendar.DAY_OF_YEAR)) - 1);
+            total += charged * (Math.pow(1d + interest, 1d / calendar.getActualMaximum(Calendar.DAY_OF_YEAR)) - 1);
         }
 
-        assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), closeTo(charged, PRECISION));
+        assertThat(infoService.getBalance(account1.token, account1.iBan).getSavingsBalance(), closeTo(charged, PRECISION));
 
         // Shift 2
         timeService.simulateTime(SHIFT);
@@ -175,15 +176,15 @@ public class TimeServiceTest extends BoilerplateTest {
         for (int i = 0; i < SHIFT; i++) {
             calendar.add(Calendar.DAY_OF_MONTH, 1);
 
-            if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+            if (calendar.get(Calendar.MONTH) == 0 && calendar.get(Calendar.DAY_OF_MONTH) == 1) {
                 charged = total;
             }
 
             double interest = charged > 75000d ? 0.2d : 0.15d;
-            total += -charged * (Math.pow(1d + interest, 1d / calendar.getActualMaximum(Calendar.DAY_OF_YEAR)) - 1);
+            total += charged * (Math.pow(1d + interest, 1d / calendar.getActualMaximum(Calendar.DAY_OF_YEAR)) - 1);
         }
 
-        assertThat(infoService.getBalance(account1.token, account1.iBan).getBalance(), closeTo(charged, PRECISION));
+        assertThat(infoService.getBalance(account1.token, account1.iBan).getSavingsBalance(), closeTo(charged, PRECISION));
 
         // Reset authentication
         account1.token = authService.getAuthToken(account1.username, account1.password).getAuthToken();

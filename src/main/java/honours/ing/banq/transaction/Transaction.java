@@ -66,4 +66,28 @@ public class Transaction {
     public String getDescription() {
         return description;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Transaction)) return false;
+
+        Transaction that = (Transaction) o;
+
+        if (source != null ? !source.equals(that.source) : that.source != null) return false;
+        if (destination != null ? !destination.equals(that.destination) : that.destination != null) return false;
+        if (targetName != null ? !targetName.equals(that.targetName) : that.targetName != null) return false;
+        if (amount != null ? !amount.equals(that.amount) : that.amount != null) return false;
+        return description != null ? description.equals(that.description) : that.description == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = source != null ? source.hashCode() : 0;
+        result = 31 * result + (destination != null ? destination.hashCode() : 0);
+        result = 31 * result + (targetName != null ? targetName.hashCode() : 0);
+        result = 31 * result + (amount != null ? amount.hashCode() : 0);
+        result = 31 * result + (description != null ? description.hashCode() : 0);
+        return result;
+    }
 }

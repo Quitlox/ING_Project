@@ -8,15 +8,13 @@ import honours.ing.banq.customer.Customer;
 import honours.ing.banq.info.bean.UserAccessBean;
 import honours.ing.banq.util.IBANUtil;
 import honours.ing.banq.util.StringUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.naming.OperationNotSupportedException;
 import java.util.List;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -126,7 +124,7 @@ public class BankAccountServiceTest extends BoilerplateTest {
         bankAccountService.closeAccount(account1.token, IBANUtil.generateIBAN(123456789));
     }
 
-    @Test
+    @Test(expected = NotAuthorizedError.class)
     public void closeAccountNonPrimaryHolder() throws Exception {
         accessService.provideAccess(account1.token, account1.iBan, account2.username);
         bankAccountService.closeAccount(account2.token, account1.iBan);
@@ -161,7 +159,7 @@ public class BankAccountServiceTest extends BoilerplateTest {
                                          "Test Transaction, please ignore");
     }
 
-    @Test
+    @Ignore // Is not specified in Extension 5 Specification
     public void setOverdraftLimitNonPrimaryHolder() throws Exception {
         accessService.provideAccess(account1.token, account1.iBan, account2.username);
         bankAccountService.setOverdraftLimit(account2.token, account1.iBan, 1000d);
@@ -190,6 +188,7 @@ public class BankAccountServiceTest extends BoilerplateTest {
         Customer customer = authService.getAuthorizedCustomer(account1.token);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account1.iBan));
 
+        assertThat(bankAccount.getSavingsAccount(), notNullValue());
         List<UserAccessBean> userAccessBeans = infoService.getUserAccess(account1.token);
         assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount, customer)), is(true));
         assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount.getSavingsAccount(), customer)), is(true));
@@ -202,12 +201,13 @@ public class BankAccountServiceTest extends BoilerplateTest {
         bankAccountService.openSavingsAccount(account2.token, account1.iBan);
 
         Customer customer = authService.getAuthorizedCustomer(account1.token);
-        BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account2.iBan));
+        BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account1.iBan));
 
         List<UserAccessBean> userAccessBeans = infoService.getUserAccess(account2.token);
-        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount, customer)), is(true));
-        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount.getSavingsAccount(), customer)), is(false));
-        assertThat(userAccessBeans.size(), equalTo(1));
+        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount, customer)),
+                   is(true)); // customer is and should be ignored by contains()
+        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount.getSavingsAccount(), customer)), is(true));
+        assertThat(userAccessBeans.size(), equalTo(3));
     }
 
     @Test(expected = NotAuthorizedError.class)
@@ -215,7 +215,7 @@ public class BankAccountServiceTest extends BoilerplateTest {
         bankAccountService.openSavingsAccount(account1.token, account2.iBan);
     }
 
-    @Test(expected = NotAuthorizedError.class)
+    @Test(expected = InvalidParamValueError.class)
     public void openSavingsAccountNonExistantIBAN() throws Exception {
         bankAccountService.openSavingsAccount(account1.token, "-1");
     }
@@ -227,22 +227,27 @@ public class BankAccountServiceTest extends BoilerplateTest {
 
     @Test
     public void closeSavingsAccount() throws Exception {
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
         bankAccountService.closeSavingsAccount(account1.token, account1.iBan);
         Customer customer = authService.getAuthorizedCustomer(account1.token);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account1.iBan));
 
         List<UserAccessBean> userAccessBeans = infoService.getUserAccess(account1.token);
         assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount, customer)), is(true));
-        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount.getSavingsAccount(), customer)), is(false));
         assertThat(userAccessBeans.size(), equalTo(1));
     }
 
-    @Test
+    @Test(expected = InvalidParamValueError.class)
+    public void closeSavingsAccountAccountNotCreated() throws Exception {
+        bankAccountService.closeSavingsAccount(account1.token, account1.iBan);
+    }
+
+    @Test(expected = InvalidParamValueError.class)
     public void closeSavingsAccountNonExistantIBAN() throws Exception {
         bankAccountService.closeSavingsAccount(account1.token, " -1");
     }
 
-    @Test
+    @Test(expected = NotAuthorizedError.class)
     public void closeSavingsAccountWrongIBAN() throws Exception {
         bankAccountService.closeSavingsAccount(account1.token, account2.iBan);
     }
@@ -250,15 +255,18 @@ public class BankAccountServiceTest extends BoilerplateTest {
     @Test
     public void closeSavingsAccountNonPrimaryHolder() throws Exception {
         accessService.provideAccess(account1.token, account1.iBan, account2.username);
+        bankAccountService.openSavingsAccount(account2.token, account1.iBan);
         bankAccountService.closeSavingsAccount(account2.token, account1.iBan);
 
         Customer customer = authService.getAuthorizedCustomer(account1.token);
-        BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account1.iBan));
+        BankAccount bankAccount1 = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account1.iBan));
+        BankAccount bankAccount2 = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account2.iBan));
 
         List<UserAccessBean> userAccessBeans = infoService.getUserAccess(account2.token);
-        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount, customer)), is(true));
-        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount.getSavingsAccount(), customer)), is(false));
-        assertThat(userAccessBeans.size(), equalTo(1));
+        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount1, customer)),
+                   is(true)); // The customer is ignored by equals() and thus by contains()
+        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount2, customer)), is(true));
+        assertThat(userAccessBeans.size(), equalTo(2));
     }
 
 }

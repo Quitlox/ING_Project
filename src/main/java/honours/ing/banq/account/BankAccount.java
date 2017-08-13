@@ -20,7 +20,7 @@ public class BankAccount extends Account {
     public static final double INTEREST_MONTHLY = Math.pow(1d + INTEREST_ANNUAL, 1d / 12d) - 1;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @PrimaryKeyJoinColumn
+//    @PrimaryKeyJoinColumn
     private SavingsAccount savingsAccount;
 
     @ManyToOne(targetEntity = Customer.class)

@@ -22,12 +22,14 @@ public class IBANUtil {
         return calculateChecksum(iBAN.substring(4, iBAN.length())).equals(check);
     }
 
-    public static long getAccountNumber(String iBAN) throws InvalidParamValueError {
-        if (!IBANUtil.isValidIBAN(iBAN)) {
+    public static long getAccountNumber(String iBan) throws InvalidParamValueError {
+        iBan = IBANUtil.convertToBankAccount(iBan);
+
+        if (!IBANUtil.isValidIBAN(iBan)) {
             throw new InvalidParamValueError("The given IBAN is invalid");
         }
 
-        return Long.parseLong(iBAN.substring(8, iBAN.length()));
+        return Long.parseLong(iBan.substring(8, iBan.length()));
     }
 
     public static String generateIBAN(Account account) {
@@ -78,7 +80,7 @@ public class IBANUtil {
         String res = iBan;
 
         if (isSavingsAccount(iBan)){
-            iBan = iBan.substring(iBan.length() - 1);
+            res = iBan.substring(0, iBan.length() - 1);
         }
 
         return res;

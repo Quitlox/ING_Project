@@ -36,4 +36,21 @@ public class UserAccessBean {
     public void setOwner(String owner) {
         this.owner = owner;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserAccessBean)) return false;
+
+        UserAccessBean that = (UserAccessBean) o;
+
+        return iBan.equals(that.iBan);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = iBan.hashCode();
+        result = 31 * result + owner.hashCode();
+        return result;
+    }
 }

@@ -115,7 +115,8 @@ public class BankAccountServiceImpl implements BankAccountService {
             throw new NotAuthorizedError();
         }
 
-        if (account.getBalance() != 0 || account.getSavingsAccount().getBalance() != 0) {
+        if (account.getBalance() != 0 || (account.getSavingsAccount() != null &&
+                                          account.getSavingsAccount().getBalance() != 0)) {
             throw new InvalidParamValueError("Can not close BankAccount/SavingsAccount with a non zero balance.");
         }
 
@@ -175,6 +176,10 @@ public class BankAccountServiceImpl implements BankAccountService {
 
     @Override
     public void openSavingsAccount(String token, String iBan) throws InvalidParamValueError, NotAuthorizedError {
+        if (IBANUtil.isSavingsAccount(iBan)) {
+            throw new InvalidParamValueError("The given IBAN is already SavingsAccount.");
+        }
+
         Customer customer = auth.getAuthorizedCustomer(token);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(iBan));
 
@@ -182,7 +187,7 @@ public class BankAccountServiceImpl implements BankAccountService {
             throw new NotAuthorizedError();
         }
 
-        bankAccount.setSavingsAccount(new SavingsAccount(bankAccount));
+        bankAccount.setSavingsAccount(new SavingsAccount());
         bankAccountRepository.save(bankAccount);
     }
 
@@ -193,6 +198,10 @@ public class BankAccountServiceImpl implements BankAccountService {
 
         if (!infoService.getUserAccess(token).contains(new UserAccessBean(bankAccount, customer))) {
             throw new NotAuthorizedError();
+        }
+
+        if (bankAccount.getSavingsAccount() == null) {
+            throw new InvalidParamValueError("This account does not have an attached SavingsAccount.");
         }
 
         // Assumption: getSavingsAccount >= 0

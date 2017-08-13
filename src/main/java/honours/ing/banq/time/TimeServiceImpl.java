@@ -2,7 +2,9 @@ package honours.ing.banq.time;
 
 import honours.ing.banq.InvalidParamValueError;
 import honours.ing.banq.access.NoEffectError;
+import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.account.BankAccountRepository;
+import honours.ing.banq.account.SavingsAccount;
 import honours.ing.banq.auth.AuthRepository;
 import honours.ing.banq.card.CardRepository;
 import honours.ing.banq.customer.CustomerRepository;
@@ -71,6 +73,19 @@ public class TimeServiceImpl implements TimeService {
         calendar.add(Calendar.DAY_OF_MONTH, 1);
         time.setUtc(calendar.getTime().getTime());
         timeRepository.save(time);
+
+        // Set Daily lows
+        List<BankAccount> bankAccounts = bankAccountRepository.findAll();
+        for (BankAccount bankAccount : bankAccounts) {
+            bankAccount.setDailyLow(bankAccount.getBalance());
+
+            SavingsAccount savingsAccount = bankAccount.getSavingsAccount();
+            if (savingsAccount == null) {
+                continue;
+            }
+
+            savingsAccount.setDailyLow(savingsAccount.getBalance());
+        }
 
         // Simulate Interest
         timeManager.calculateBankAccountInterest();

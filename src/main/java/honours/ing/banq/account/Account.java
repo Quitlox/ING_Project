@@ -25,6 +25,10 @@ public class Account {
     protected Double overdraftLimit;
 
     public Account() {
+        balance = 0d;
+        dailyLow = 0d;
+        builtInterest = 0d;
+        overdraftLimit = 0d;
     }
 
     public Integer getId() {

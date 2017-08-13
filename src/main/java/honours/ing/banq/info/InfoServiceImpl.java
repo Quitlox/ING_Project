@@ -40,11 +40,11 @@ public class InfoServiceImpl implements InfoService {
     private TransactionRepository transactionRepository;
 
     @Override
-    public BalanceBean getBalance(String autToken, String iBAN) throws InvalidParamValueError,
+    public BalanceBean getBalance(String autToken, String iBan) throws InvalidParamValueError,
             NotAuthorizedError {
         Customer customer = auth.getAuthorizedCustomer(autToken);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
-                (iBAN));
+                (iBan));
 
         if (bankAccount == null) {
             throw new InvalidParamValueError("The given IBAN does not exist.");
@@ -58,11 +58,12 @@ public class InfoServiceImpl implements InfoService {
     }
 
     @Override
-    public List<Transaction> getTransactionsOverview(String authToken, String iBAN, Integer
+    public List<Transaction> getTransactionsOverview(String authToken, String iBan, Integer
             nrOfTransactions) throws InvalidParamValueError, NotAuthorizedError {
+        iBan = IBANUtil.convertToBankAccount(iBan);
         Customer customer = auth.getAuthorizedCustomer(authToken);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
-                (iBAN));
+                (iBan));
 
         if (bankAccount == null) {
             throw new InvalidParamValueError("The given IBAN does not exist.");
@@ -76,10 +77,10 @@ public class InfoServiceImpl implements InfoService {
             throw new NotAuthorizedError();
         }
 
-        List<Transaction> list = transactionRepository.findBySourceOrDestinationOrderByDateDesc(iBAN, iBAN);
+        List<Transaction> list = transactionRepository.findBySourceOrDestinationOrderByDateDesc(iBan, iBan);
         return list.size() > nrOfTransactions ? list.subList(0, nrOfTransactions) : transactionRepository
-                .findBySourceOrDestinationOrderByDateDesc(iBAN,
-                                                          iBAN);
+                .findBySourceOrDestinationOrderByDateDesc(iBan,
+                                                          iBan);
     }
 
     @Override

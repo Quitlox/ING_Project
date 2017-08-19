@@ -151,6 +151,10 @@ public class BankAccountServiceImpl implements BankAccountService {
             throw new InvalidParamValueError("The overdraftLimit must be positive.");
         }
 
+        if (overdraftLimit > 5000d) {
+            throw new InvalidParamValueError("The overdraftLimit can be at most 5000.");
+        }
+
         bankAccount.setOverdraftLimit(overdraftLimit);
         bankAccountRepository.save(bankAccount);
     }

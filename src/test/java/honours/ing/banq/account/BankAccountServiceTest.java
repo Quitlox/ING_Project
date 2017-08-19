@@ -198,6 +198,13 @@ public class BankAccountServiceTest extends BoilerplateTest {
     @Test
     public void openSavingsAccountNonPrimaryHolder() throws Exception {
         accessService.provideAccess(account1.token, account1.iBan, account2.username);
+        exception.expect(NotAuthorizedError.class);
+        bankAccountService.openSavingsAccount(account2.token, account1.iBan);
+    }
+
+    @Ignore
+    public void openSavingsAccountNonPrimaryHolderSuccess() throws Exception {
+        accessService.provideAccess(account1.token, account1.iBan, account2.username);
         bankAccountService.openSavingsAccount(account2.token, account1.iBan);
 
         Customer customer = authService.getAuthorizedCustomer(account1.token);
@@ -254,6 +261,14 @@ public class BankAccountServiceTest extends BoilerplateTest {
 
     @Test
     public void closeSavingsAccountNonPrimaryHolder() throws Exception {
+        accessService.provideAccess(account1.token, account1.iBan, account2.username);
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
+        exception.expect(NotAuthorizedError.class);
+        bankAccountService.closeSavingsAccount(account2.token, account1.iBan);
+    }
+
+    @Ignore
+    public void closeSavingsAccountNonPrimaryHolderSuccess() throws Exception {
         accessService.provideAccess(account1.token, account1.iBan, account2.username);
         bankAccountService.openSavingsAccount(account2.token, account1.iBan);
         bankAccountService.closeSavingsAccount(account2.token, account1.iBan);

@@ -183,7 +183,7 @@ public class BankAccountServiceImpl implements BankAccountService {
         Customer customer = auth.getAuthorizedCustomer(token);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(iBan));
 
-        if (!infoService.getUserAccess(token).contains(new UserAccessBean(bankAccount, customer))) {
+        if (!bankAccount.getPrimaryHolder().equals(customer)) {
             throw new NotAuthorizedError();
         }
 
@@ -196,12 +196,12 @@ public class BankAccountServiceImpl implements BankAccountService {
         Customer customer = auth.getAuthorizedCustomer(token);
         BankAccount bankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(iBan));
 
-        if (!infoService.getUserAccess(token).contains(new UserAccessBean(bankAccount, customer))) {
+        if (!bankAccount.getPrimaryHolder().equals(customer)) {
             throw new NotAuthorizedError();
         }
 
         if (bankAccount.getSavingsAccount() == null) {
-            throw new InvalidParamValueError("This account does not have an attached SavingsAccount.");
+            throw new InvalidParamValueError("This account does not attached SavingsAccount.");
         }
 
         // Assumption: getSavingsAccount >= 0

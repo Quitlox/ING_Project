@@ -2,17 +2,16 @@ package honours.ing.banq.time;
 
 import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.account.BankAccountRepository;
+import honours.ing.banq.account.SavingsAccount;
+import honours.ing.banq.transaction.Transaction;
+import honours.ing.banq.transaction.TransactionRepository;
+import honours.ing.banq.util.IBANUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,6 +32,9 @@ public class TimeManager {
     @Autowired
     private BankAccountRepository bankAccountRepository;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
     @EventListener(ContextRefreshedEvent.class)
     public void contextRefreshedEvent() {
         List<Time> times = timeRepository.findAll();
@@ -42,13 +44,13 @@ public class TimeManager {
         }
     }
 
-    // 00:01, later than chargeInterest()
-    @Scheduled(cron = "0 0 0 * * ?")
-    public void calculateInterest() {
+    // 00:01, later than chargeBankAccountInterest()
+    //@Scheduled(cron = "0 0 0 * * ?")
+    public void calculateBankAccountInterest() {
         Calendar calendar = toCalendar(timeService.getDateObject());
 
         if (calendar.get(Calendar.DAY_OF_MONTH) == 1) {
-            chargeInterest();
+            chargeBankAccountInterest();
         }
 
         List<BankAccount> bankAccounts = bankAccountRepository.findAll();
@@ -63,22 +65,7 @@ public class TimeManager {
         bankAccountRepository.save(bankAccounts);
     }
 
-    public void calculateReverseInterest() {
-        Calendar calendar = toCalendar(timeService.getDateObject());
-
-        List<BankAccount> bankAccounts = bankAccountRepository.findAll();
-        for (BankAccount bankAccount : bankAccounts) {
-            if (bankAccount.getBalance() < 0) {
-                bankAccount.addBuiltInterest(-((bankAccount.getDailyLow() + bankAccount.getBuiltInterest()) / ((BankAccount.INTEREST_MONTHLY /
-                                                                            calendar.getActualMaximum(
-                                                                                    Calendar.DAY_OF_MONTH)) + 1) - (bankAccount.getDailyLow() + bankAccount.getBuiltInterest())));
-            }
-        }
-
-        bankAccountRepository.save(bankAccounts);
-    }
-
-    public void chargeInterest() {
+    public void chargeBankAccountInterest() {
         List<BankAccount> bankAccounts = bankAccountRepository.findAll();
         for (BankAccount bankAccount : bankAccounts) {
             bankAccount.subBalance(bankAccount.getBuiltInterest());
@@ -86,6 +73,55 @@ public class TimeManager {
         }
 
         bankAccountRepository.save(bankAccounts);
+    }
+
+    public void calculateSavingsAccountInterest() {
+        Calendar calendar = toCalendar(timeService.getDateObject());
+
+        if (calendar.get(Calendar.MONTH) == 0 && calendar.get(Calendar.DAY_OF_MONTH) == 1) {
+            chargeSavingsAccountInterest();
+        }
+
+        List<BankAccount> bankAccounts = bankAccountRepository.findAll();
+        for (BankAccount bankAccount : bankAccounts) {
+            SavingsAccount savingsAccount = bankAccount.getSavingsAccount();
+
+            if (savingsAccount == null) {
+                continue;
+            }
+
+            double interest = savingsAccount.getDailyLow() > 75000d ? 0.2d : 0.15d;
+            savingsAccount.addBuiltInterest(savingsAccount.getDailyLow() * (Math.pow(1d + interest, 1d /
+                                                                                                     calendar.getActualMaximum(
+                                                                                                             Calendar.DAY_OF_YEAR)) -
+                                                                             1));
+        }
+
+        bankAccountRepository.save(bankAccounts);
+    }
+
+    public void chargeSavingsAccountInterest() {
+        List<BankAccount> bankAccounts = bankAccountRepository.findAll();
+        List<Transaction> transactions = new ArrayList<>();
+        for (BankAccount bankAccount : bankAccounts) {
+            SavingsAccount savingsAccount = bankAccount.getSavingsAccount();
+
+            if (savingsAccount == null) {
+                continue;
+            }
+
+            Transaction transaction = new Transaction(null, IBANUtil.generateIBAN(bankAccount),
+                                                      bankAccount.getPrimaryHolder().getName(),
+                                                      timeService.getDateObject(), savingsAccount.getBuiltInterest(),
+                                                      "Interest");
+            transactions.add(transaction);
+
+            savingsAccount.addBalance(savingsAccount.getBuiltInterest());
+            savingsAccount.resetBuiltInterest();
+        }
+
+        bankAccountRepository.save(bankAccounts);
+        transactionRepository.save(transactions);
     }
 
     public static GregorianCalendar toCalendar(Date date) {

@@ -3,7 +3,11 @@ package honours.ing.banq.info;
 import honours.ing.banq.BoilerplateTest;
 import honours.ing.banq.InvalidParamValueError;
 import honours.ing.banq.access.AccessService;
+import honours.ing.banq.account.BankAccount;
+import honours.ing.banq.account.BankAccountRepository;
+import honours.ing.banq.account.SavingsAccount;
 import honours.ing.banq.auth.NotAuthorizedError;
+import honours.ing.banq.customer.Customer;
 import honours.ing.banq.info.bean.BalanceBean;
 import honours.ing.banq.info.bean.BankAccountAccessBean;
 import honours.ing.banq.info.bean.UserAccessBean;
@@ -13,6 +17,7 @@ import honours.ing.banq.util.IBANUtil;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Date;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
@@ -24,16 +29,27 @@ import static org.junit.Assert.assertThat;
  */
 public class InfoServiceTest extends BoilerplateTest {
 
+    // Repositories
     @Autowired
-    private TransactionService transactionService;
-
-    @Autowired
-    private AccessService accessService;
+    private BankAccountRepository bankAccountRepository;
 
     @Test
     public void getBalance() throws Exception {
         BalanceBean balanceBean = infoService.getBalance(account1.token, account1.iBan);
         assertThat(balanceBean.getBalance(), equalTo(0d));
+
+        bankAccountService.setOverdraftLimit(account2.token, account2.iBan, 200d);
+        transactionService.transferMoney(account2.token, account2.iBan, account1.iBan, account1.username, 200d,
+                                         "Test Transaction, please ignore");
+        balanceBean = infoService.getBalance(account1.token, account1.iBan);
+        assertThat(balanceBean.getBalance(), equalTo(200d));
+
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
+        transactionService.transferMoney(account1.token, account1.iBan, account1.iBan + "S", null, 200d,
+                                         "Test Transaction, please ignore");
+        balanceBean = infoService.getBalance(account1.token, account1.iBan + "S");
+        assertThat(balanceBean.getBalance(), equalTo(0d));
+        assertThat(balanceBean.getSavingsBalance(), equalTo(200d));
     }
 
     @Test(expected = NotAuthorizedError.class)
@@ -72,20 +88,14 @@ public class InfoServiceTest extends BoilerplateTest {
         transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 500d);
         transactions = infoService.getTransactionsOverview(account1.token, account1.iBan, 2);
         assertThat(transactions.size(), equalTo(1));
-        transaction = transactions.get(0);
-        assertThat(transaction.getAmount(), equalTo(500d));
-        assertThat(transaction.getSource(), nullValue());
-        assertThat(transaction.getDestination(), equalTo(account1.iBan));
+        assertThat(transactions.contains(new Transaction(null, account1.iBan, "Jan Jansen", new Date(), 500d, "Deposit")), is(true));
 
         // Test Transaction 2
         transactionService.transferMoney(account1.token, account1.iBan, account2
                 .iBan, "null", 200d, "Test Transaction 2");
         transactions = infoService.getTransactionsOverview(account1.token, account1.iBan, 2);
         assertThat(transactions.size(), equalTo(2));
-        transaction = transactions.get(1);
-        assertThat(transaction.getAmount(), equalTo(200d));
-        assertThat(transaction.getSource(), equalTo(account1.iBan));
-        assertThat(transaction.getDestination(), equalTo(account2.iBan));
+        assertThat(transactions.contains(new Transaction(account1.iBan, account2.iBan, "null", new Date(), 200d, "Test Transaction 2")), is(true));
 
         // Test Transaction 3
         transactionService.transferMoney(account1.token, account1.iBan, account2
@@ -94,20 +104,55 @@ public class InfoServiceTest extends BoilerplateTest {
         assertThat(transactions.size(), equalTo(2));
         transactions = infoService.getTransactionsOverview(account1.token, account1.iBan, 10);
         assertThat(transactions.size(), equalTo(3));
-        transaction = transactions.get(2);
-        assertThat(transaction.getAmount(), equalTo(150d));
-        assertThat(transaction.getSource(), equalTo(account1.iBan));
-        assertThat(transaction.getDestination(), equalTo(account2.iBan));
+        assertThat(transactions.contains(new Transaction(account1.iBan, account2.iBan, "null", new Date(), 150d, "Test Transaction 3")), is(true));
 
         // Test Transaction 4
         transactionService.transferMoney(account2.token, account2.iBan, account1
                 .iBan, "null", 100d, "Test Transaction 4");
         transactions = infoService.getTransactionsOverview(account2.token, account2.iBan, 10);
         assertThat(transactions.size(), equalTo(3));
-        transaction = transactions.get(2);
-        assertThat(transaction.getAmount(), equalTo(100d));
-        assertThat(transaction.getSource(), equalTo(account2.iBan));
-        assertThat(transaction.getDestination(), equalTo(account1.iBan));
+        assertThat(transactions.contains(new Transaction(account2.iBan, account1.iBan, "null", new Date(), 100d, "Test Transaction 4")), is(true));
+
+        // Test Transaction 5 (SavingsAccount)
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
+        transactionService
+                .transferMoney(account1.token, account1.iBan, account1.iBan + "S", "null", 150d, "Test Transaction 5");
+        transactions = infoService.getTransactionsOverview(account1.token, account1.iBan, 10);
+        assertThat(transactions.size(), equalTo(5));
+        assertThat(transactions.contains(new Transaction(account1.iBan, account1.iBan + "S", "null", new Date(), 150d, "Test Transaction 5")), is(true));
+
+        // Test Transaction 6(SavingsAccount)
+        transactionService
+                .transferMoney(account1.token, account1.iBan + "S", account1.iBan, "null", 150d, "Test Transaction 6");
+        transactions = infoService.getTransactionsOverview(account1.token, account1.iBan, 10);
+        assertThat(transactions.size(), equalTo(6));
+        assertThat(transactions.contains(new Transaction(account1.iBan + "S", account1.iBan, "null", new Date(), 150d, "Test Transaction 6")), is(true));
+    }
+
+    @Test
+    public void getTransactionsOverviewInterest() throws Exception {
+        // Setup accounts
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
+        transactionService.depositIntoAccount(account1.iBan, account1.cardNumber, account1.pin, 1000d);
+        transactionService.transferMoney(account1.token, account1.iBan, account1.iBan + "S", null, 1000d, "Test transaction, please ignore");
+
+        // Simulate
+        timeService.simulateTime(365);
+        account1.token = authService.getAuthToken(account1.username, account1.password).getAuthToken();
+
+        // Test
+        List<Transaction> transactions = infoService.getTransactionsOverview(account1.token, account1.iBan + "S", 10);
+        assertThat(transactions.size(), equalTo(3));
+        assertThat(transactions.contains(new Transaction(null, account1.iBan, "Jan Jansen", new Date(), 1000d, "Deposit")), is(true));
+        assertThat(transactions.contains(new Transaction(account1.iBan, account1.iBan + "S", null, new Date(), 1000d, "Test transaction, please ignore")), is(true));
+
+        boolean success = false;
+        for (Transaction transaction : transactions) {
+            if (transaction.getDescription().equals("Interest")) {
+                success = true;
+            }
+        }
+        assertThat(success, is(true));
     }
 
     @Test(expected = InvalidParamValueError.class)
@@ -146,24 +191,28 @@ public class InfoServiceTest extends BoilerplateTest {
 
         // Provide Access
         accessService.provideAccess(account2.token, account2.iBan, account1.username);
+        String secondiBan = bankAccountService.openAdditionalAccount(account1.token).getiBAN();
+        bankAccountService.openSavingsAccount(account1.token, account1.iBan);
+
+        Customer customer1 = authService.getAuthorizedCustomer(account1.token);
+        BankAccount bankAccount1 = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account1.iBan));
+        BankAccount bankAccount1Additional = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(secondiBan));
+        SavingsAccount bankAccount1Savings = bankAccount1.getSavingsAccount();
+        Customer customer2 = authService.getAuthorizedCustomer(account2.token);
+        BankAccount bankAccount2 = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber(account2.iBan));
+
         userAccessBeans = infoService.getUserAccess(account1.token);
-        assertThat(userAccessBeans.size(), equalTo(2));
-
-        boolean suc1 = false, suc2 = false;
-        for (UserAccessBean userAccessBean : userAccessBeans) {
-            if (userAccessBean.getiBan().equals(account1.iBan) && userAccessBean.getOwner().equals("Jan Jansen")) {
-                suc1 = true;
-            }
-
-            if (userAccessBean.getiBan().equals(account2.iBan) && userAccessBean.getOwner().equals("Piet Pietersen")) {
-                suc2 = true;
-            }
-        }
-
-        assertThat(suc1 && suc2, is(true));
+        assertThat(userAccessBeans.size(), equalTo(4));
+        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount1, customer1)), is(true));
+        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount1Additional, customer1)), is(true));
+        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount1Savings, customer1)), is(true));
+        assertThat(userAccessBeans.contains(new UserAccessBean(bankAccount2, customer2)), is(true));
 
         // Revoke Access
         accessService.revokeAccess(account2.token, account2.iBan, account1.username);
+        bankAccountService.closeSavingsAccount(account1.token, account1.iBan + "S");
+        bankAccountService.closeAccount(account1.token, secondiBan);
+
         userAccessBeans = infoService.getUserAccess(account1.token);
         assertThat(userAccessBeans.size(), equalTo(1));
         assertThat(userAccessBeans.get(0).getiBan(), equalTo(account1.iBan));
@@ -186,19 +235,13 @@ public class InfoServiceTest extends BoilerplateTest {
 
         // One extra holder (provideAccess)
         accessService.provideAccess(account1.token, account1.iBan, account2.username);
-        accessBeans = infoService.getBankAccountAccess(account1.token, account1.iBan);
-        assertThat(accessBeans.size(), equalTo(2));
-        boolean suc1 = false, suc2 = false;
-        for (BankAccountAccessBean accessBean : accessBeans) {
-            if (accessBean.getUsername().equals(account1.username)) {
-                suc1 = true;
-            }
 
-            if (accessBean.getUsername().equals(account2.username)) {
-                suc2 = true;
-            }
-        }
-        assertThat(suc1 & suc2, is(true));
+        accessBeans = infoService.getBankAccountAccess(account1.token, account1.iBan);
+        Customer customer1 = authService.getAuthorizedCustomer(account1.token);
+        Customer customer2 = authService.getAuthorizedCustomer(account2.token);
+        assertThat(accessBeans.size(), equalTo(2));
+        assertThat(accessBeans.contains(new BankAccountAccessBean(customer1)), is(true));
+        assertThat(accessBeans.contains(new BankAccountAccessBean(customer2)), is(true));
 
         // Check other account
         accessBeans = infoService.getBankAccountAccess(account2.token, account2.iBan);

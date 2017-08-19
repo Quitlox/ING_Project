@@ -1,5 +1,6 @@
 package honours.ing.banq;
 
+import honours.ing.banq.access.AccessService;
 import honours.ing.banq.account.BankAccountService;
 import honours.ing.banq.auth.AuthService;
 import honours.ing.banq.bean.AccountInfo;
@@ -36,6 +37,9 @@ import static org.junit.Assert.assertThat;
 public class BoilerplateTest {
 
     // Services
+    @Autowired
+    protected AccessService accessService;
+
     @Autowired
     protected CardService cardService;
 

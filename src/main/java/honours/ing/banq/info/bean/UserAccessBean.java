@@ -1,5 +1,6 @@
 package honours.ing.banq.info.bean;
 
+import honours.ing.banq.account.Account;
 import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.customer.Customer;
 import honours.ing.banq.util.IBANUtil;
@@ -15,7 +16,7 @@ public class UserAccessBean {
     private String iBan;
     private String owner;
 
-    public UserAccessBean(BankAccount account, Customer customer) {
+    public UserAccessBean(Account account, Customer customer) {
         this.iBan = IBANUtil.generateIBAN(account);
         this.owner = customer.getName();
     }
@@ -34,5 +35,22 @@ public class UserAccessBean {
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserAccessBean)) return false;
+
+        UserAccessBean that = (UserAccessBean) o;
+
+        return iBan.equals(that.iBan);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = iBan.hashCode();
+        result = 31 * result + owner.hashCode();
+        return result;
     }
 }

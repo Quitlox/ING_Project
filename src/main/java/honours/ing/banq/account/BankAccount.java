@@ -3,7 +3,6 @@ package honours.ing.banq.account;
 import honours.ing.banq.customer.Customer;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,24 +12,16 @@ import java.util.List;
  * @author Jeffrey Bakker
  */
 @Entity
-public class BankAccount {
+public class BankAccount extends Account {
 
     @Transient
     private static final double INTEREST_ANNUAL = 0.1d;
     @Transient
     public static final double INTEREST_MONTHLY = Math.pow(1d + INTEREST_ANNUAL, 1d / 12d) - 1;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
-
-    private Double balance;
-
-    private Double overdraftLimit;
-
-    private Double dailyLow;
-
-    private Double builtInterest;
+    @OneToOne(cascade = CascadeType.ALL)
+//    @PrimaryKeyJoinColumn
+    private SavingsAccount savingsAccount;
 
     @ManyToOne(targetEntity = Customer.class)
     private Customer primaryHolder;
@@ -46,60 +37,25 @@ public class BankAccount {
 
     public BankAccount(Customer primaryHolder) {
         this.primaryHolder = primaryHolder;
-        balance = 0d;
-        overdraftLimit = 0d;
-        dailyLow = 0d;
-        builtInterest = 0d;
         holders = new ArrayList<>();
-    }
 
-    public Integer getId() {
-        return id;
-    }
-
-    public Double getBalance() {
-        return balance;
-    }
-
-    public void subBalance(Double balance) {
-        this.balance -= balance;
-        this.dailyLow = this.balance;
-    }
-
-    public void addBalance(Double balance) {
-        this.balance += balance;
-    }
-
-    public Double getOverdraftLimit() {
-        return overdraftLimit;
+        savingsAccount = null;
     }
 
     public void setOverdraftLimit(Double overdraftLimit) {
         this.overdraftLimit = overdraftLimit;
     }
 
-    public Double getDailyLow() {
-        return dailyLow;
-    }
-
-    public void setDailyLow(Double dailyLow) {
-        this.dailyLow = dailyLow;
-    }
-
-    public void resetBuiltInterest() {
-        this.builtInterest = 0d;
-    }
-
-    public void addBuiltInterest(Double builtInterest) {
-        this.builtInterest += builtInterest;
-    }
-
-    public Double getBuiltInterest() {
-        return builtInterest;
-    }
-
     public Customer getPrimaryHolder() {
         return primaryHolder;
+    }
+
+    public SavingsAccount getSavingsAccount() {
+        return savingsAccount;
+    }
+
+    public void setSavingsAccount(SavingsAccount savingsAccount) {
+        this.savingsAccount = savingsAccount;
     }
 
     public void addHolder(Customer holder) {

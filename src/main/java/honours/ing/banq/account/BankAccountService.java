@@ -58,4 +58,10 @@ public interface BankAccountService {
     OverdraftLimitBean getOverdraftLimit(@JsonRpcParam("authToken") String token,
                                          @JsonRpcParam("iBAN") String iBan) throws NotAuthorizedError;
 
+    void openSavingsAccount(@JsonRpcParam("authToken") String token,
+                            @JsonRpcParam("iBAN") String iBan) throws InvalidParamValueError, NotAuthorizedError;
+
+    void closeSavingsAccount(@JsonRpcParam("authToken") String token,
+                             @JsonRpcParam("iBAN") String iBan) throws InvalidParamValueError, NotAuthorizedError;
+
 }

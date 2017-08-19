@@ -24,4 +24,19 @@ public class BankAccountAccessBean {
     public void setUsername(String username) {
         this.username = username;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BankAccountAccessBean)) return false;
+
+        BankAccountAccessBean that = (BankAccountAccessBean) o;
+
+        return username.equals(that.username);
+    }
+
+    @Override
+    public int hashCode() {
+        return username.hashCode();
+    }
 }

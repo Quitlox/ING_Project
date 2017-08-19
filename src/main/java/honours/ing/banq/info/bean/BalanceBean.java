@@ -9,13 +9,21 @@ import honours.ing.banq.account.BankAccount;
  */
 public class BalanceBean {
 
-    private Double balance;
+    private Double bankBalance;
+    private Double savingsBalance;
 
-    public BalanceBean(BankAccount bankAccount) {
-        balance = bankAccount.getBalance();
+    public BalanceBean(BankAccount account) {
+        bankBalance = account.getBalance();
+        if (account.getSavingsAccount() != null) {
+            savingsBalance = account.getSavingsAccount().getBalance();
+        }
     }
 
     public Double getBalance() {
-        return balance;
+        return bankBalance;
+    }
+
+    public Double getSavingsBalance() {
+        return savingsBalance;
     }
 }

@@ -2,6 +2,7 @@ package honours.ing.banq.transaction;
 
 import com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImpl;
 import honours.ing.banq.InvalidParamValueError;
+import honours.ing.banq.account.Account;
 import honours.ing.banq.account.BankAccount;
 import honours.ing.banq.account.BankAccountRepository;
 import honours.ing.banq.auth.AuthService;
@@ -16,8 +17,6 @@ import honours.ing.banq.util.IBANUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
 
 /**
  * @author Kevin Witlox
@@ -75,7 +74,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         // Save transaction
         Transaction transaction = new Transaction(null, iBAN, bankAccount.getPrimaryHolder()
-                .getName(), timeService.getDateObject(), amount, "Deposit");
+                                                                         .getName(), timeService.getDateObject(),
+                                                  amount, "Deposit");
         transactionRepository.save(transaction);
     }
 
@@ -121,40 +121,72 @@ public class TransactionServiceImpl implements TransactionService {
     public void transferMoney(String authToken, String sourceIBAN, String targetIBAN, String
             targetName, Double amount, String description) throws InvalidParamValueError,
             NotAuthorizedError {
-        if (!IBANUtil.isValidIBAN(sourceIBAN)) {
-            throw new InvalidParamValueError("The given source IBAN is not valid.");
+        boolean sourceIsSavingsAccount = IBANUtil.isSavingsAccount(sourceIBAN);
+        sourceIBAN = IBANUtil.convertToBankAccount(sourceIBAN);
+        boolean targetIsSavingsAccount = IBANUtil.isSavingsAccount(targetIBAN);
+        targetIBAN = IBANUtil.convertToBankAccount(targetIBAN);
+
+        if (!IBANUtil.isValidIBAN(sourceIBAN) || !IBANUtil.isValidIBAN(targetIBAN)) {
+            throw new InvalidParamValueError("One of the given IBANs is invalid.");
         }
 
-        BankAccount fromBankAccount = bankAccountRepository.findOne((int) IBANUtil
+        BankAccount sourceBankAccount = bankAccountRepository.findOne((int) IBANUtil
                 .getAccountNumber(sourceIBAN));
-        BankAccount toBankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
+        BankAccount targetBankAccount = bankAccountRepository.findOne((int) IBANUtil.getAccountNumber
                 (targetIBAN));
         Customer customer = auth.getAuthorizedCustomer(authToken);
 
         // Check if bank account is held by customer
-        if (!fromBankAccount.getHolders().contains(customer) && !fromBankAccount.getPrimaryHolder
+        if (!sourceBankAccount.getHolders().contains(customer) && !sourceBankAccount.getPrimaryHolder
                 ().equals(customer)) {
             throw new NotAuthorizedError();
         }
 
-        // Check balance
-        if (fromBankAccount.getBalance() - amount < -fromBankAccount.getOverdraftLimit()) {
-            throw new InvalidParamValueError("Not enough balance on account.");
-        }
-
+        // Check amount
         if (amount <= 0) {
             throw new InvalidParamValueError("Amount should be greater than 0.");
         }
 
-        // Update balance
-        fromBankAccount.subBalance(amount);
-        toBankAccount.addBalance(amount);
-        bankAccountRepository.save(fromBankAccount);
-        bankAccountRepository.save(toBankAccount);
+        Account sourceAccount = sourceBankAccount;
+        Account targetAccount = targetBankAccount;
 
-        // Save Transaction
-        Transaction transaction = new Transaction(sourceIBAN, targetIBAN, targetName, timeService.getDateObject()
-                , amount, description);
+        // Check if SavingsAccount Transaction
+        if (sourceIsSavingsAccount ^ targetIsSavingsAccount) {
+            if (!sourceBankAccount.equals(targetBankAccount)) {
+                throw new InvalidParamValueError(
+                        "A SavingsAccount can only exchange currency with its holder BankAccount.");
+            }
+        } else if (sourceIsSavingsAccount & targetIsSavingsAccount) {
+            throw new InvalidParamValueError(
+                    "A SavingsAccount can only exchange currency with its holder BankAccount.");
+        }
+
+        // Update Source/Destination if necessary
+        if (sourceIsSavingsAccount) {
+            sourceAccount = sourceBankAccount.getSavingsAccount();
+            sourceIBAN += "S";
+        } else if (targetIsSavingsAccount) {
+            targetAccount = targetBankAccount.getSavingsAccount();
+            targetIBAN += "S";
+
+            if (targetAccount == null) {
+                throw new InvalidParamValueError("The given BankAccount has not opened a SavingsAccount.");
+            }
+        }
+
+        // Check balance
+        if (sourceAccount.getBalance() - amount < -sourceAccount.getOverdraftLimit()) {
+            throw new InvalidParamValueError("Not enough balance on account.");
+        }
+
+        // Update balance
+        sourceAccount.subBalance(amount);
+        targetAccount.addBalance(amount);
+        bankAccountRepository.save(sourceBankAccount);
+        bankAccountRepository.save(targetBankAccount);
+
+        Transaction transaction = new Transaction(sourceIBAN, targetIBAN, targetName, timeService.getDateObject(),
+                                                  amount, description);
         transactionRepository.save(transaction);
     }
 

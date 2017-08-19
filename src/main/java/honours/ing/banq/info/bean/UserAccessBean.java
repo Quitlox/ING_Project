@@ -18,7 +18,7 @@ public class UserAccessBean {
 
     public UserAccessBean(Account account, Customer customer) {
         this.iBan = IBANUtil.generateIBAN(account);
-        this.owner = customer.getName();
+        this.owner = customer != null ? customer.getName() : "null";
     }
 
     public String getiBan() {

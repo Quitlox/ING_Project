@@ -78,8 +78,6 @@ public class InfoServiceTest extends BoilerplateTest {
         List<Transaction> transactions = infoService.getTransactionsOverview(account1.token, account1.iBan, 2);
         assertThat(transactions.size(), equalTo(0));
 
-        Transaction transaction;
-
         // Checked:
         // - nrOfTransactions correct
         // - correct number of transactions returned for different accounts

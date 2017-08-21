@@ -25,7 +25,6 @@ import java.util.Random;
  * @since 14-5-17
  */
 @Service
-@AutoJsonRpcServiceImpl
 @Transactional
 public class AuthServiceImpl implements AuthService {
 

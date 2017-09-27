@@ -10,11 +10,7 @@ import honours.ing.banq.customer.Customer;
  * @author jeffrey
  * @since 14-5-17
  */
-@JsonRpcService("/api/auth")
-public interface AuthService {
-
-    AuthToken getAuthToken(@JsonRpcParam("username") String username,
-                           @JsonRpcParam("password") String password) throws AuthenticationError;
+public interface AuthService extends AuthServiceAPI {
 
     Customer getAuthorizedCustomer(String token) throws NotAuthorizedError;
 

@@ -24,5 +24,4 @@ public interface AccessService {
             throws InvalidParamValueError, NotAuthorizedError, NoEffectError;
 
 
-
 }

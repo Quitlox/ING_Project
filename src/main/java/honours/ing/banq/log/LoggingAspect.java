@@ -1,12 +1,17 @@
 package honours.ing.banq.log;
 
+import honours.ing.banq.time.TimeService;
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.After;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import javax.transaction.Transactional;
 
 /**
  * @author Kevin Witlox
@@ -14,9 +19,17 @@ import org.springframework.stereotype.Component;
  */
 @Aspect
 @Component
-public class Logger {
+public class LoggingAspect {
 
-    private final org.slf4j.Logger logger = LoggerFactory.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    // Repositories
+    @Autowired
+    private LogRepository logRepository;
+
+    // Services
+    @Autowired
+    private TimeService timeService;
 
     @Pointcut("execution(* *.*(..))")
     protected void allMethod() {
@@ -26,7 +39,7 @@ public class Logger {
     protected void service() {
     }
 
-    @After("allMethod() && service()")
+    @Before("allMethod() && service()")
     public void logAfter(JoinPoint point) {
         StringBuilder builder = new StringBuilder(point.getSignature().getName());
         builder.append("(");
@@ -43,15 +56,21 @@ public class Logger {
 
         builder.append(");");
         logger.info(builder.toString());
+        saveLog(builder.toString());
     }
 
     @AfterThrowing(pointcut = "service() && allMethod()", throwing = "exception")
     public void logAfterThrowing(JoinPoint joinPoint, Throwable exception) {
-        StringBuilder builder = new StringBuilder(exception.getClass().getSimpleName());
-        builder.append("(").append(exception.getMessage()).append(")");
-        builder.append(" thrown by ").append(joinPoint.getSignature().getName());
-        logger.error(builder.toString());
+        String message = exception.getClass().getSimpleName() + "(" + exception.getMessage() + ")" +
+                         " thrown by " + joinPoint.getSignature().getName();
+        logger.error(message);
+        saveLog("error");
     }
 
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    private void saveLog(String message) {
+        //logRepository.save(new Log(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date()), message));
+        logRepository.save(new Log(timeService.getDateObject().getTime(), message));
+    }
 
 }

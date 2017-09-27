@@ -17,13 +17,13 @@ public class Log {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    private long timeStamp;
+    private Date timeStamp;
     private String eventLog;
 
     protected Log() {
     }
 
-    public Log(long timeStamp, String eventLog) {
+    public Log(Date timeStamp, String eventLog) {
         this.timeStamp = timeStamp;
         this.eventLog = eventLog;
     }
@@ -32,11 +32,11 @@ public class Log {
         return id;
     }
 
-    public long getTimeStamp() {
+    public Date getTimeStamp() {
         return timeStamp;
     }
 
-    public void setTimeStamp(long timeStamp) {
+    public void setTimeStamp(Date timeStamp) {
         this.timeStamp = timeStamp;
     }
 

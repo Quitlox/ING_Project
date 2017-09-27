@@ -1,6 +1,7 @@
 package honours.ing.banq.log;
 
 import com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImpl;
+import honours.ing.banq.log.bean.LogBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -8,6 +9,7 @@ import javax.transaction.Transactional;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -23,18 +25,18 @@ public class LogServiceImpl implements LogService {
     private LogRepository logRepository;
 
     @Override
-    public List<Log> getEventLogs(String beginDate, String endDate) {
+    public List<LogBean> getEventLogs(String beginDate, String endDate) {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 
-        long beginLong = 0, endLong = 0;
+        Date beginLong = null, endLong = null;
         try {
-            beginLong = format.parse(beginDate).getTime();
-            endLong = format.parse(endDate).getTime();
+            beginLong = format.parse(beginDate);
+            endLong = format.parse(endDate);
         } catch (ParseException e) {
             e.printStackTrace();
         }
 
-        return logRepository.findLogsByTimeStampBetween(beginLong, endLong);
+        return LogBean.generate(logRepository.findLogsByTimeStampBetween(beginLong, endLong));
     }
 
 }

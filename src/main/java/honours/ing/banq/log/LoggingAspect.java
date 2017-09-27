@@ -70,7 +70,7 @@ public class LoggingAspect {
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     private void saveLog(String message) {
         //logRepository.save(new Log(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(new Date()), message));
-        logRepository.save(new Log(timeService.getDateObject().getTime(), message));
+        logRepository.save(new Log(timeService.getDateObject(), message));
     }
 
 }

@@ -2,6 +2,7 @@ package honours.ing.banq.log;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -10,6 +11,6 @@ import java.util.List;
  */
 public interface LogRepository extends JpaRepository<Log, Integer> {
 
-    List<Log> findLogsByTimeStampBetween(long beginDate, long endDate);
+    List<Log> findLogsByTimeStampBetween(Date beginDate, Date endDate);
 
 }
